@@ -210,7 +210,8 @@ typedef struct tstats_t {
 	unsigned eth_rx_dns;
 
 	// header compression
-	unsigned compress_hash_collision;
+	unsigned compress_hash_collision_l2;
+	unsigned compress_hash_collision_l3;
 	unsigned udp_tx_compressed_pkt;
 } TStats;
 

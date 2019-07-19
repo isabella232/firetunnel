@@ -64,6 +64,7 @@ void compress_l2_init(void) {
 void print_compress_l2_table(int direction) {
 	MacConnection *conn = (direction == S2C)? connection_s2c: connection_c2s;
 	printf("Compression L2 hash table:\n");
+	printf("   cache collision %d\n", tunnel.stats.compress_hash_collision_l2);
 	int i;
 	for (i = 0; i < 256; i++, conn++) {
 		if (conn->active) {
@@ -113,7 +114,7 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 		else {
 			// a new packet; replace the existing session
 			dbg_printf("replace l2 hash %d\n", hash);
-			tunnel.stats.compress_hash_collision++;
+			tunnel.stats.compress_hash_collision_l2++;
 			memcpy(&conn->s, &s, sizeof(MacSession));
 			conn->cnt = 1;
 		}
