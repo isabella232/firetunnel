@@ -1,4 +1,4 @@
-# bash completion for firemon                          -*- shell-script -*-
+# bash completion for firetunnel                          -*- shell-script -*-
 #********************************************************************
 # Script based on completions/configure script in bash-completion package in
 # Debian. The original package is release under GPL v2 license, the webpage is

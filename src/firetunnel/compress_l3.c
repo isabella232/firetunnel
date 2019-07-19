@@ -19,8 +19,12 @@
 */
 #include "firetunnel.h"
 
+//*******************************************************************
 // header compression scheme based on RFC 2507
-typedef struct session_t {	// offset
+// the session structure stores the bytes that don't change
+// the bytes that change are sent out  -> structure NewHeader
+//*******************************************************************
+typedef struct ip_session_t {	// offset
 	uint8_t mac[14];	// 0 - ethernet header
 	uint16_t ver_ihl_tos;	// 14 - ip
 	uint16_t len;		// 16 - use a default value and recalculate in decompress()
@@ -30,7 +34,7 @@ typedef struct session_t {	// offset
 	uint8_t protocol;	// 23
 	uint16_t checksum;	// 24 - use a default value and recalculate in decompress()
 	uint8_t addr[8];	// 26
-} __attribute__((__packed__)) Session;	// 34
+} __attribute__((__packed__)) IpSession;	// 34
 #define FULL_HEADER_LEN 34
 
 // fields not included in params above
@@ -45,7 +49,7 @@ int compress_l3_size(void) {
 }
 
 // fill up a session structure; ptr is the start of eth packet
-static void set_session(uint8_t *ptr, Session *s) {
+static void set_session(uint8_t *ptr, IpSession *s) {
 	assert(s);
 	memcpy(s->mac, ptr, 14);
 	memcpy(&s->ver_ihl_tos, ptr + 14, 2);
@@ -55,7 +59,7 @@ static void set_session(uint8_t *ptr, Session *s) {
 	memcpy(s->addr, ptr + 26, 8);
 }
 
-static void print_session(Session *s) {
+static void print_session(IpSession *s) {
 	uint32_t ip1;
 	uint32_t ip2;
 	memcpy(&ip1, s->addr, 4);
@@ -73,13 +77,17 @@ static void set_new_header(uint8_t *ptr, NewHeader *h) {
 }
 
 
-typedef struct tcp_connection_t {
-	int active;
-	int cnt;
-	Session s;
-} Connection;
-static Connection connection_s2c[256];
-static Connection connection_c2s[256];
+//*******************************************************************
+// An IP connection has a packet session associated, and counts the packets
+// Tracking 256 IP connections in each directions
+//*******************************************************************
+typedef struct ip_connection_t {
+	int active;	// TODO: get rid of active
+	int cnt;	// packet counter for session s
+	IpSession s;
+} IpConnection;
+static IpConnection connection_s2c[256];
+static IpConnection connection_c2s[256];
 
 void compress_l3_init(void) {
 	memset(connection_s2c, 0, sizeof(connection_s2c));
@@ -87,7 +95,7 @@ void compress_l3_init(void) {
 }
 
 void print_compress_l3_table(int direction) {
-	Connection *conn = (direction == S2C)? &connection_s2c[0]: &connection_c2s[0];
+	IpConnection *conn = (direction == S2C)? &connection_s2c[0]: &connection_c2s[0];
 	printf("Compression L3 table:\n");
 	int i;
 	for (i = 0; i < 256; i++, conn++) {
@@ -100,11 +108,15 @@ void print_compress_l3_table(int direction) {
 	}
 }
 
-// record the session and return 1 if the packet can be compressed
+// ptr points at the begining of Ethernet packet
+// start a new session if this is a new packet (return 0)
+// for an existing session:
+//          send packet uncompressed from time to time (cnt 1, 2, 3, 8, 16 etc... - return 0)
+//          else send packet compressed (return 1)
 // store the hash in sid if sid not null
 int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 	int rv = 0;
-	Session s;
+	IpSession s;
 	set_session(pkt, &s);
 
 	uint8_t hash = 0;
@@ -115,9 +127,9 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 	if (sid)
 		*sid = hash;
 
-	Connection *conn = (direction == S2C)? &connection_s2c[hash]: &connection_c2s[hash];
+	IpConnection *conn = (direction == S2C)? &connection_s2c[hash]: &connection_c2s[hash];
 	if (conn->active) {
-		if (memcmp(&s, &conn->s, sizeof(Session)) == 0) {
+		if (memcmp(&s, &conn->s, sizeof(IpSession)) == 0) {
 			conn->cnt++;
 			int cnt = conn->cnt;
 
@@ -131,12 +143,12 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 		else {
 			dbg_printf("replace l2 hash %d\n", hash);
 			tunnel.stats.compress_hash_collision++;
-			memcpy(&conn->s, &s, sizeof(Session));
+			memcpy(&conn->s, &s, sizeof(IpSession));
 			conn->cnt = 1;
 		}
 	}
 	else {
-		memcpy(&conn->s, &s, sizeof(Session));
+		memcpy(&conn->s, &s, sizeof(IpSession));
 		conn->cnt = 1;
 		conn->active = 1;
 	}
@@ -162,8 +174,8 @@ int compress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
 }
 
 int decompress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
-	Connection *conn = (direction == S2C)? &connection_s2c[sid]: &connection_c2s[sid];
-	Session *s = &conn->s;
+	IpConnection *conn = (direction == S2C)? &connection_s2c[sid]: &connection_c2s[sid];
+	IpSession *s = &conn->s;
 	NewHeader h;
 	memcpy(&h, pkt, sizeof(h));
 

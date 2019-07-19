@@ -171,7 +171,8 @@ typedef struct packet_header_t {
 	uint8_t opcode: 4;
 #endif
 
-	uint8_t sid;		// session id for header compression
+	uint8_t sid;		// header compression session id  (opcode O_DATA_COMPRESSED_L2 or -O_DATA_COMPRESSED_L3)
+			// the sid is the hash value for the Connection array
 	uint16_t seq;	// packet sequence number
 	uint32_t timestamp;	// epoch timestamp
 } __attribute__((__packed__)) PacketHeader;	// 8 bytes

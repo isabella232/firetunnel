@@ -20,9 +20,11 @@
 #include "firetunnel.h"
 
 // header compression scheme based on RFC 2507
-typedef struct session_t {	// offset
+// the session structure stores the bytes that don't change
+//    - actually in the case of L2 MAC we store everything!
+typedef struct mac_session_t {	// offset
 	uint8_t mac[14];	// 0 - ethernet header
-} __attribute__((__packed__)) Session;	// 38
+} __attribute__((__packed__)) MacSession;	// 38
 #define FULL_HEADER_LEN 14
 
 int compress_l2_size(void) {
@@ -30,24 +32,29 @@ int compress_l2_size(void) {
 }
 
 // fill up a session structure; ptr is the start of eth packet
-static void set_session(uint8_t *ptr, Session *s) {
+static void set_session(uint8_t *ptr, MacSession *s) {
 	assert(s);
 	memcpy(s->mac, ptr, 14);
 }
 
-static void print_session(Session *s) {
+static void print_session(MacSession *s) {
 	printf("%02x:%02x:%02x:%02x:%02x:%02x -> ", PRINT_MAC(s->mac));
 	printf("%02x:%02x:%02x:%02x:%02x:%02x ", PRINT_MAC(s->mac + 6));
 	printf("%02x%02x\n", s->mac[12], s->mac[13]);
 }
 
+
+//*******************************************************************
+// A MAC connection has a packet session associated, and counts the packets
+// Tracking 256 IP connections in each directions
+//*******************************************************************
 typedef struct mac_connection_t {
-	int active;
-	int cnt;
-	Session s;
-} Connection;
-static Connection connection_s2c[256];
-static Connection connection_c2s[256];
+	int active;	// TODO: get rid of active
+	int cnt;	// packet counter for session s
+	MacSession s;
+} MacConnection;
+static MacConnection connection_s2c[256];
+static MacConnection connection_c2s[256];
 
 void compress_l2_init(void) {
 	memset(connection_s2c, 0, sizeof(connection_s2c));
@@ -55,7 +62,7 @@ void compress_l2_init(void) {
 }
 
 void print_compress_l2_table(int direction) {
-	Connection *conn = (direction == S2C)? connection_s2c: connection_c2s;
+	MacConnection *conn = (direction == S2C)? connection_s2c: connection_c2s;
 	printf("Compression L2 hash table:\n");
 	int i;
 	for (i = 0; i < 256; i++, conn++) {
@@ -69,13 +76,18 @@ void print_compress_l2_table(int direction) {
 }
 
 
-// record the session and return 1 if the packet can be compressed
+// ptr points at the begining of Ethernet packet
+// start a new session if this is a new packet (return 0)
+// for an existing session:
+//          send packet uncompressed from time to time (cnt 1, 2, 3, 8, 16 etc... - return 0)
+//          else send packet compressed (return 1)
 // store the hash in sid if sid not null
 int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
-	int rv = 0;
-	Session s;
+	int rv = 0; // send uncompressed packet
+	MacSession s;
 	set_session(pkt, &s);
 
+	// calculate hash
 	uint8_t hash = 0;
 	unsigned i;
 	uint8_t *ptr = (uint8_t *) &s;
@@ -84,9 +96,10 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 	if (sid)
 		*sid = hash;
 
-	Connection *conn = (direction == S2C)? &connection_s2c[hash]: &connection_c2s[hash];
+	MacConnection *conn = (direction == S2C)? &connection_s2c[hash]: &connection_c2s[hash];
 	if (conn->active) {
-		if (memcmp(&s, &conn->s, sizeof(Session)) == 0) {
+		// is this our packet or a new one?
+		if (memcmp(&s, &conn->s, sizeof(MacSession)) == 0) {
 			conn->cnt++;
 			int cnt = conn->cnt;
 
@@ -98,14 +111,17 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 				rv = 1;
 		}
 		else {
+			// a new packet; replace the existing session
 			dbg_printf("replace l2 hash %d\n", hash);
 			tunnel.stats.compress_hash_collision++;
-			memcpy(&conn->s, &s, sizeof(Session));
+			memcpy(&conn->s, &s, sizeof(MacSession));
 			conn->cnt = 1;
 		}
 	}
 	else {
-		memcpy(&conn->s, &s, sizeof(Session));
+		// we are seeing this packet for the first time
+		// store a new session
+		memcpy(&conn->s, &s, sizeof(MacSession));
 		conn->cnt = 1;
 		conn->active = 1;
 	}
@@ -114,6 +130,7 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 }
 
 int compress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
+	// since full MAC was stored in the session structure already, there is nothing to be done
 	(void) pkt;
 	(void) nbytes;
 	(void) sid;
@@ -124,8 +141,8 @@ int compress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
 
 int decompress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
 	(void) nbytes;
-	Connection *conn = (direction == S2C)? &connection_s2c[sid]: &connection_c2s[sid];
-	Session *s = &conn->s;
+	MacConnection *conn = (direction == S2C)? &connection_s2c[sid]: &connection_c2s[sid];
+	MacSession *s = &conn->s;
 
 	// build the real header
 	pkt -= FULL_HEADER_LEN;
