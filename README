@@ -30,7 +30,7 @@ Software install:
 
    Compile-time dependencies: libseccomp (https://github.com/seccomp/libseccomp)
    Run-time dependencies: dnsutils (https://www.isc.org)
-   (on Debian/Ubuntu run "sudo apt-get install build-essential libseccomp-dev dnsutils")
+   (on Debian/Ubuntu run "sudo apt-get install build-essential libseccomp-dev dnsutils git")
 
    Compile and install:
    $ git clone https://github.com/netblue30/firetunnel.git
