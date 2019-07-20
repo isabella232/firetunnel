@@ -161,7 +161,8 @@ typedef struct packet_header_t {
 #define O_MAX 5 // the last one
 
 // flags
-#define F_SYNC 1
+#define F_SYNC 1 	//  a node in disconnected state sends this flag in hello packet;
+		// the node receiving this flag set clear its compression table
 
 #if BYTE_ORDER == BIG_ENDIAN
 	uint8_t opcode: 4;
