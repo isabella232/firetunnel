@@ -132,6 +132,8 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 	if (conn->active) {
 		if (memcmp(&s, &conn->s, sizeof(IpSession)) == 0) {
 			conn->cnt++;
+			rv = compress_shaper(conn->cnt);
+#if 0
 			int cnt = conn->cnt;
 
 			if (cnt > 50 && cnt % 50)
@@ -140,6 +142,7 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 				rv = 1;
 			else if (cnt > 3 && cnt % 8)
 				rv = 1;
+#endif
 		}
 		else {
 			dbg_printf("replace l2 hash %d\n", hash);

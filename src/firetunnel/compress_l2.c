@@ -104,6 +104,8 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 		// is this our packet or a new one?
 		if (memcmp(&s, &conn->s, sizeof(MacSession)) == 0) {
 			conn->cnt++;
+			rv = compress_shaper(conn->cnt);
+#if 0
 			int cnt = conn->cnt;
 
 			if (cnt > 50 && cnt % 50)
@@ -112,6 +114,7 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 				rv = 1;
 			else if (cnt > 3 && cnt % 8)
 				rv = 1;
+#endif
 		}
 		else {
 			// a new packet; replace the existing session
