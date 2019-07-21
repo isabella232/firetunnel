@@ -19,9 +19,11 @@
 */
 #include "firetunnel.h"
 
+//*******************************************************************
 // header compression scheme based on RFC 2507
-// the session structure stores the bytes that don't change
+// the session structure stores the header bytes that don't change
 //    - actually in the case of L2 MAC we store everything!
+//*******************************************************************
 typedef struct mac_session_t {	// offset
 	uint8_t mac[14];	// 0 - ethernet header
 } __attribute__((__packed__)) MacSession;	// 38
@@ -78,8 +80,8 @@ void print_compress_l2_table(int direction) {
 
 
 // ptr points at the begining of Ethernet packet
-// start a new session if this is a new packet (return 0)
-// for an existing session:
+// start a new circuit if this is a new packet (return 0)
+// for an existing circuit:
 //          send packet uncompressed from time to time (cnt 1, 2, 3, 8, 16 etc... - return 0)
 //          else send packet compressed (return 1)
 // store the hash in sid if sid not null

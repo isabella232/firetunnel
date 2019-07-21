@@ -21,7 +21,7 @@
 
 //*******************************************************************
 // header compression scheme based on RFC 2507
-// the session structure stores the bytes that don't change
+// the session structure stores the header bytes that don't change
 // the bytes that change are sent out  -> structure NewHeader
 //*******************************************************************
 typedef struct ip_session_t {	// offset
