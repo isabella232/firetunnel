@@ -105,16 +105,6 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 		if (memcmp(&s, &conn->s, sizeof(MacSession)) == 0) {
 			conn->cnt++;
 			rv = compress_shaper(conn->cnt);
-#if 0
-			int cnt = conn->cnt;
-
-			if (cnt > 50 && cnt % 50)
-				rv = 1;
-			else if (cnt > 20 && cnt % 20)
-				rv = 1;
-			else if (cnt > 3 && cnt % 8)
-				rv = 1;
-#endif
 		}
 		else {
 			// a new packet; replace the existing session
