@@ -418,11 +418,8 @@ void dns_set_tunnel(void);
 // compress_l3.c
 static inline int compress_shaper(int cnt) {
 	int rv = 0;
-	if (cnt > 50 && cnt % 50)
-		rv = 1;
-	else if (cnt > 20 && cnt % 20)
-		rv = 1;
-	else if (cnt > 3 && cnt % 8)
+
+	if (cnt > 3 && cnt % 10)
 		rv = 1;
 	return rv;
 }

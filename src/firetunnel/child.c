@@ -218,7 +218,9 @@ void child(int socket) {
 			if (pkt_check_header(udpframe, nbytes, &client_addr)) { // also does BLAKE2 authentication
 				if (tunnel.state == S_CONNECTED)
 					tunnel.connect_ttl = CONNECT_TTL;
+printf("*** rx from server\n");
 				if (udpframe->header.flags & F_SYNC) {
+printf("********** got F_SYNC *********************\n");
 					logmsg("sync requested by %d.%d.%d.%d:%d\n",
 					       PRINT_IP(ntohl(client_addr.sin_addr.s_addr)),
 					       ntohs(client_addr.sin_port));
@@ -264,6 +266,7 @@ void child(int socket) {
 				else if (opcode == O_HELLO) {
 					dbg_printf("hello ");
 
+printf("*** was a hello from server\n");
 					if (tunnel.state == S_DISCONNECTED) {
 						tunnel.state = S_CONNECTED;
 						tunnel.seq = 0;
@@ -280,6 +283,7 @@ void child(int socket) {
 						logmsg("%d.%d.%d.%d:%d connected\n",
 						       PRINT_IP(ntohl(tunnel.remote_sock_addr.sin_addr.s_addr)),
 						       ntohs(tunnel.remote_sock_addr.sin_port));
+printf("********************** cleaning compress\n");
 						compress_l2_init();
 						compress_l3_init();
 					}

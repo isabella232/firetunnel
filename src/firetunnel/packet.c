@@ -111,8 +111,12 @@ void pkt_send_hello(UdpFrame *frame, int udpfd) {
 	// set header
 	tunnel.seq++;
 	pkt_set_header(&frame->header, O_HELLO,  tunnel.seq);
-	if (tunnel.state == S_DISCONNECTED)
+	if (tunnel.state == S_DISCONNECTED) {
 		frame->header.flags |= F_SYNC;
+printf(">>> send hello *** F_SYNC ***\n");
+}
+else
+printf(">>> send hello\n");
 	int nbytes = sizeof(PacketHeader);
 
 	// send overlay data if we are the server
