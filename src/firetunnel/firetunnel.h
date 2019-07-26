@@ -419,7 +419,9 @@ void dns_set_tunnel(void);
 static inline int compress_shaper(int cnt) {
 	int rv = 0;
 
-	if (cnt > 3 && cnt % 10)
+	if (cnt > 20 && cnt % 20)
+		rv = 1;
+	else if (cnt > 3 && cnt % 5)
 		rv = 1;
 	return rv;
 }
