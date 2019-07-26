@@ -268,10 +268,8 @@ printf("********** got F_SYNC *********************\n");
 
 printf("*** was a hello from server\n");
 					if (tunnel.state == S_DISCONNECTED) {
-						tunnel.state = S_CONNECTED;
 						tunnel.seq = 0;
 						// update remote data
-						// force a hello out to the client
 						if (arg_server) {
 							memcpy(&tunnel.remote_sock_addr, &client_addr, sizeof(struct sockaddr_in));
 							timeout.tv_sec = 0;
@@ -280,12 +278,16 @@ printf("*** was a hello from server\n");
 						else
 							printf("\n");
 
+						// responde with a hello and set the state
+						pkt_send_hello(udpframe, tunnel.udpfd);
+						tunnel.state = S_CONNECTED;
 						logmsg("%d.%d.%d.%d:%d connected\n",
 						       PRINT_IP(ntohl(tunnel.remote_sock_addr.sin_addr.s_addr)),
 						       ntohs(tunnel.remote_sock_addr.sin_port));
 printf("********************** cleaning compress\n");
 						compress_l2_init();
 						compress_l3_init();
+
 					}
 					tunnel.connect_ttl = CONNECT_TTL;
 
