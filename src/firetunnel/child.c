@@ -43,6 +43,7 @@ void child(int socket) {
 	timeout.tv_usec = 0;
 
 	// init packet storage
+	// rx
 	PacketMem *pktmem = malloc(sizeof(PacketMem));
 	if (!pktmem)
 		errExit("malloc");
@@ -50,8 +51,15 @@ void child(int socket) {
 	UdpFrame *udpframe = &pktmem->f;
 	int hlen = sizeof(PacketHeader);
 
+	// tx - used for hello, stats  and messages; for data, the rx packet is reused
+	PacketMem *txpktmem = malloc(sizeof(PacketMem));
+	if (!pktmem)
+		errExit("malloc");
+	memset(txpktmem, 0, sizeof(PacketMem));
+	UdpFrame *txudpframe = &txpktmem->f;
+
 	if (!arg_server) {
-		pkt_send_hello(udpframe, tunnel.udpfd);
+		pkt_send_hello(txudpframe, tunnel.udpfd);
 		printf("Connecting..."); fflush(0);
 		timeout.tv_sec = 2;
 	}
@@ -84,7 +92,7 @@ void child(int socket) {
 			// the client always sends it, regardless of the connection status
 			if (tunnel.state == S_CONNECTED || !arg_server) {
 				dbg_printf("\ntunnel tx hello ");
-				pkt_send_hello(udpframe, tunnel.udpfd);
+				pkt_send_hello(txudpframe, tunnel.udpfd);
 				dbg_printf("\n");
 			}
 
@@ -108,7 +116,7 @@ void child(int socket) {
 			// print stats
 			if (++statscnt >= STATS_TIMEOUT_MAX) {
 				statscnt = 0;
-				pkt_print_stats(udpframe, tunnel.udpfd);
+				pkt_print_stats(txudpframe, tunnel.udpfd);
 			}
 
 			if (++compresscnt >= COMPRESS_TIMEOUT_MAX) {
@@ -249,7 +257,7 @@ void child(int socket) {
 						ethstart -= rv;
 						nbytes += rv;
 					}
-					if (pkt_is_ip(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes))
+					if (pkt_is_ip(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes)) // TODO: why udp???
 						classify_l3(ethstart, NULL, direction);
 					else
 						classify_l2(ethstart, NULL, direction);
@@ -276,7 +284,7 @@ void child(int socket) {
 							printf("\n");
 
 						// responde with a hello and set the state
-						pkt_send_hello(udpframe, tunnel.udpfd);
+						pkt_send_hello(txudpframe, tunnel.udpfd);
 						tunnel.state = S_CONNECTED;
 						logmsg("%d.%d.%d.%d:%d connected\n",
 						       PRINT_IP(ntohl(tunnel.remote_sock_addr.sin_addr.s_addr)),
