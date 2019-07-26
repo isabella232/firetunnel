@@ -283,8 +283,11 @@ void child(int socket) {
 						else
 							printf("\n");
 
-						// responde with a hello and set the state
+						// respond with a hello
 						pkt_send_hello(txudpframe, tunnel.udpfd);
+						// actually send two of them...
+						pkt_send_hello(txudpframe, tunnel.udpfd);
+
 						tunnel.state = S_CONNECTED;
 						logmsg("%d.%d.%d.%d:%d connected\n",
 						       PRINT_IP(ntohl(tunnel.remote_sock_addr.sin_addr.s_addr)),
