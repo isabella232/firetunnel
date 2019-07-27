@@ -78,6 +78,16 @@ void print_compress_l2_table(int direction) {
 	}
 }
 
+void update_compress_l2_stats(void) {
+	MacConnection *conn = (arg_server)? connection_s2c: connection_c2s;
+	int cnt = 0;
+	int i;
+	for (i = 0; i < 256; i++, conn++)
+		if (conn->active)
+			cnt++;
+
+	tunnel.stats.compress_hash_cnt_l2 = cnt;
+}
 
 // ptr points at the begining of Ethernet packet
 // start a new circuit if this is a new packet (return 0)

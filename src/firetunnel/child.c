@@ -116,6 +116,8 @@ void child(int socket) {
 			// print stats
 			if (++statscnt >= STATS_TIMEOUT_MAX) {
 				statscnt = 0;
+				update_compress_l2_stats();
+				update_compress_l3_stats();
 				pkt_print_stats(txudpframe, tunnel.udpfd);
 			}
 

@@ -108,6 +108,17 @@ void print_compress_l3_table(int direction) {
 		}
 	}
 }
+void update_compress_l3_stats(void) {
+	IpConnection *conn = (arg_server)? connection_s2c: connection_c2s;
+	int cnt = 0;
+	int i;
+	for (i = 0; i < 256; i++, conn++)
+		if (conn->active)
+			cnt++;
+
+	tunnel.stats.compress_hash_cnt_l3 = cnt;
+}
+
 
 // ptr points at the begining of Ethernet packet
 // start a new session if this is a new packet (return 0)

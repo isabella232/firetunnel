@@ -212,7 +212,9 @@ typedef struct tstats_t {
 
 	// header compression
 	unsigned compress_hash_collision_l2;
+	unsigned compress_hash_cnt_l2;	// number of active entries in the hash table
 	unsigned compress_hash_collision_l3;
+	unsigned compress_hash_cnt_l3;	// number of active entries in the hash table
 	unsigned udp_tx_compressed_pkt;
 } TStats;
 
@@ -435,6 +437,7 @@ typedef enum {
 int compress_l3_size(void);
 void compress_l3_init(void);
 void print_compress_l3_table(int direction);
+void update_compress_l3_stats(void);
 int classify_l3(uint8_t *pkt, uint8_t *sid, int directin);
 int compress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
 int decompress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
@@ -443,6 +446,7 @@ int decompress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
 int compress_l2_size(void);
 void compress_l2_init(void);
 void print_compress_l2_table(int direction);
+void update_compress_l2_stats(void);
 int classify_l2(uint8_t *pkt, uint8_t *sid, int direction);
 int compress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
 int decompress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
