@@ -34,7 +34,7 @@ void daemonize(void) {
 		errExit("daemon");
 }
 
-void switch_user(const char *username) {
+void chroot_drop_privs(const char *username) {
 	assert(username);
 
 	struct passwd *pw;
@@ -43,6 +43,21 @@ void switch_user(const char *username) {
 		exit(1);
 	}
 
+	// check /run/fdns directory
+	struct stat s;
+	if (stat(RUN_DIR_CHROOT, &s)) {
+		fprintf(stderr, "Error: cannot find %s directory\n", RUN_DIR_CHROOT);
+		exit(1);
+	}
+	// chroot
+	int rv = chroot(RUN_DIR_CHROOT);
+	if (rv == -1)
+		errExit("chroot");
+	rv = chdir("/");
+	if (rv == -1)
+		errExit("chdir");
+
+	// drop privs
 	if (setgroups(0, NULL) < 0) {
 		fprintf(stderr, "Error: failed to drop supplementary groups\n");
 		exit(1);
@@ -67,6 +82,7 @@ static void trap_handler(int sig, siginfo_t *siginfo, void *ucontext) {
 			fprintf(stderr, " (%s)", syscall_name);
 			free(syscall_name);
 		}
+		logmsg("Error: %s process killed by seccomp - syscall %d\n", proc_id, siginfo->si_syscall);
 		fprintf(stderr, "\n");
 	}
 }

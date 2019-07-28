@@ -255,8 +255,12 @@ inline static void reset_stats(Tunnel *t) {
 
 // main.c
 #define RUN_DIR "/run/firetunnel"
+#define RUN_DIR_CHROOT (RUN_DIR "/chroot")
+#define RUN_DEV_DIR (RUN_DIR "/chroot/dev")
+#define RUN_DEVLOG_FILE (RUN_DIR "/chroot/dev/log")
 #define DEFAULT_PROFILE (SYSCONFDIR "/default.profile")
 
+extern int have_syslog;
 extern Tunnel tunnel;
 extern int arg_server;		// run this tunnel end as a server
 #define DEFAULT_PORT_NUMBER 1119 // This is the port number for Battle.net Blizzard's chat/game protocol
@@ -398,7 +402,7 @@ void net_set_netfilter(char *ifname);
 // security.c
 void daemonize(void);
 void seccomp(const char *id, const char *str);
-void switch_user(const char *username);
+void chroot_drop_privs(const char *username);
 
 // child.c
 void child(int socket);

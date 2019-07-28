@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <linux/capability.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
 
 int arg_server = 0;
 int arg_port = DEFAULT_PORT_NUMBER;
@@ -33,6 +34,8 @@ int arg_daemonize = 0;
 int arg_debug = 0;
 int arg_debug_compress = 0;
 
+
+int have_syslog = 1;	// yes by default
 Tunnel tunnel;
 static pid_t child_pid = 0;
 
@@ -205,15 +208,46 @@ int main(int argc, char **argv) {
 	struct stat s;
 	if (stat(RUN_DIR, &s) == -1) {
 		if (mkdir(RUN_DIR, 0755) == -1) {
-			// try again
-			sleep(1);
-			if (stat(RUN_DIR, &s) == -1) {
-				if (mkdir(RUN_DIR, 0755) == -1) {
-					fprintf(stderr, "Error: cannot create %s\n", RUN_DIR);
-					exit(1);
-				}
+			fprintf(stderr, "Error: cannot create %s directory\n", RUN_DIR);
+			exit(1);
+		}
+	}
+
+	// create /run/firetunnel/chroot directory
+	if (stat(RUN_DIR_CHROOT, &s) == -1) {
+		if (mkdir(RUN_DIR_CHROOT, 0755) == -1) {
+			fprintf(stderr, "Error: cannot create %s directory\n", RUN_DIR_CHROOT);
+			exit(1);
+		}
+
+		// check /dev/log file
+		struct stat s;
+		if (stat("/dev/log", &s) == 0) {
+			// create a /dev in chroot directory
+			if (mkdir(RUN_DEV_DIR, 0755) == -1 ||
+		    	     chmod(RUN_DEV_DIR, 0755) == -1 ||
+		    	     chown(RUN_DEV_DIR, 0, 0)) {
+			    	fprintf(stderr, "Error: cannot create %s directory\n", RUN_DEV_DIR);
+			    	exit(1);
+			  }
+
+			// create /dev/log and mount it
+			FILE *fp = fopen(RUN_DEVLOG_FILE, "w");
+			if (!fp)
+				have_syslog = 0;
+			else {
+				fprintf(fp, "\n");
+				fclose(fp);
+				if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
+					errExit("mounting /dev/log");
 			}
 		}
+	}
+
+	// check againg for chrooted /dev/log and print a warning
+	if (stat(RUN_DEVLOG_FILE, &s) == -1) {
+		fprintf(stderr, "Warning: cannot access syslog, no messages will be available\n");
+		have_syslog = 0;
 	}
 
 	// initialize keys
@@ -299,8 +333,10 @@ int main(int argc, char **argv) {
 	if (child_pid == 0) { // child
 		close(fd[0]);
 
+		// ***********************************
 		// security
-		switch_user("nobody");
+		//************************************
+		chroot_drop_privs("nobody");
 		if (arg_noseccomp == 0)
 			seccomp("child", profile_child_seccomp);
 		child(fd[1]);
@@ -309,14 +345,16 @@ int main(int argc, char **argv) {
 	else { // parent
 		close(fd[1]);
 
+		//************************************
 		// security
+		//************************************
 		if (arg_noseccomp == 0)
 			seccomp("parent", profile_parent_seccomp);
 
 		// process messages sent by the child
 		while (1) {
 			errno = 0;
-			char buf[1024];
+			char buf[2048];
 			unsigned n = read(fd[0], buf, sizeof(buf));
 			if (n == 0) {
 				if (errno == ECHILD)
