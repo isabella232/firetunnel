@@ -23,6 +23,14 @@
 #include <linux/capability.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/prctl.h>
+#define _GNU_SOURCE
+#include <sched.h>
+
+
+#define STACK_SIZE (1024 * 1024)
+static char child_stack[STACK_SIZE];		// space for child's stack
+static int sockpair_fd[2];
 
 int arg_server = 0;
 int arg_port = DEFAULT_PORT_NUMBER;
@@ -187,6 +195,46 @@ static void parse_args(int argc, char **argv) {
 	}
 }
 
+static int sandbox(void *sandbox_arg) {
+	(void) sandbox_arg;
+
+	prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0); // kill this process in case the parent died
+
+	// mount events are not forwarded between the host the sandbox
+	if (mount(NULL, "/", NULL, MS_SLAVE | MS_REC, NULL) < 0)
+		errExit("mount filesystem as slave");
+	
+	// munt /dev/log
+	if (have_syslog) {
+		if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
+			errExit("mounting /dev/log");
+	}
+	
+	close(sockpair_fd[0]);
+
+	// ***********************************
+	// security
+	//************************************
+	chroot_drop_privs("nobody");
+	if (arg_noseccomp == 0)
+		seccomp("child", profile_child_seccomp);
+	child(sockpair_fd[1]);
+	assert(0); // it should  never get here
+	exit(1);
+}
+
+static void start_sandbox(void) {
+	int flags = CLONE_NEWNS | CLONE_NEWPID | CLONE_NEWUTS | CLONE_NEWIPC | SIGCHLD;
+	child_pid = clone(sandbox,
+		        child_stack + STACK_SIZE,
+		        flags,
+		        NULL);
+
+	if (child_pid == -1)
+		errExit("clone");
+}
+
+
 
 
 int main(int argc, char **argv) {
@@ -212,14 +260,14 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 	}
-
+	
 	// create /run/firetunnel/chroot directory
 	if (stat(RUN_DIR_CHROOT, &s) == -1) {
 		if (mkdir(RUN_DIR_CHROOT, 0755) == -1) {
 			fprintf(stderr, "Error: cannot create %s directory\n", RUN_DIR_CHROOT);
 			exit(1);
 		}
-
+		
 		// check /dev/log file
 		struct stat s;
 		if (stat("/dev/log", &s) == 0) {
@@ -230,7 +278,7 @@ int main(int argc, char **argv) {
 			    	fprintf(stderr, "Error: cannot create %s directory\n", RUN_DEV_DIR);
 			    	exit(1);
 			  }
-
+	
 			// create /dev/log and mount it
 			FILE *fp = fopen(RUN_DEVLOG_FILE, "w");
 			if (!fp)
@@ -238,18 +286,18 @@ int main(int argc, char **argv) {
 			else {
 				fprintf(fp, "\n");
 				fclose(fp);
-				if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
-					errExit("mounting /dev/log");
+//				if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
+//					errExit("mounting /dev/log");
 			}
 		}
 	}
-
+	
 	// check againg for chrooted /dev/log and print a warning
 	if (stat(RUN_DEVLOG_FILE, &s) == -1) {
 		fprintf(stderr, "Warning: cannot access syslog, no messages will be available\n");
 		have_syslog = 0;
 	}
-
+		
 	// initialize keys
 	init_keys((uint16_t) arg_port);
 
@@ -316,8 +364,7 @@ int main(int argc, char **argv) {
 		tunnel.remote_sock_addr.sin_port = htons(arg_port);
 	}
 
-	int fd[2];
-	if (socketpair(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0, fd) == -1)
+	if (socketpair(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0, sockpair_fd) == -1)
 		errExit("setsockpair");
 
 	if (arg_daemonize)
@@ -327,59 +374,42 @@ int main(int argc, char **argv) {
 	signal(SIGTERM, sighdlr);
 	signal(SIGINT, sighdlr);
 
-	child_pid = fork();
-	if (child_pid == -1)
-		errExit("fork");
-	if (child_pid == 0) { // child
-		close(fd[0]);
+	start_sandbox(); // will exit if clone goes wrong
+	close(sockpair_fd[1]);
 
-		// ***********************************
-		// security
-		//************************************
-		chroot_drop_privs("nobody");
-		if (arg_noseccomp == 0)
-			seccomp("child", profile_child_seccomp);
-		child(fd[1]);
-		assert(0); // it should  never get here
-	}
-	else { // parent
-		close(fd[1]);
+	//************************************
+	// security
+	//************************************
+	if (arg_noseccomp == 0)
+		seccomp("parent", profile_parent_seccomp);
 
-		//************************************
-		// security
-		//************************************
-		if (arg_noseccomp == 0)
-			seccomp("parent", profile_parent_seccomp);
+	// process messages sent by the child
+	while (1) {
+		errno = 0;
+		char buf[2048];
+		unsigned n = read(sockpair_fd[0], buf, sizeof(buf));
+		if (n == 0) {
+			if (errno == ECHILD)
+				break;
+		}
 
-		// process messages sent by the child
-		while (1) {
-			errno = 0;
-			char buf[2048];
-			unsigned n = read(fd[0], buf, sizeof(buf));
-			if (n == 0) {
-				if (errno == ECHILD)
-					break;
-			}
+		if (strncmp(buf, "config ", 7) == 0 && n >= (7 + sizeof(TOverlay))) {
+			// prepare firejail configuration
+			char *fname;
+			if (asprintf(&fname, "%s/%s", RUN_DIR, tunnel.bridge_device_name) == -1)
+				errExit("asprintf");
+			TOverlay o;
+			memcpy(&o, buf + 7, sizeof(TOverlay));
+			memcpy(&tunnel.overlay, &o, sizeof(TOverlay));
 
-			if (strncmp(buf, "config ", 7) == 0 && n >= (7 + sizeof(TOverlay))) {
-				// prepare firejail configuration
-				char *fname;
-				if (asprintf(&fname, "%s/%s", RUN_DIR, tunnel.bridge_device_name) == -1)
-					errExit("asprintf");
-				TOverlay o;
-				memcpy(&o, buf + 7, sizeof(TOverlay));
-				memcpy(&tunnel.overlay, &o, sizeof(TOverlay));
+			// save configuration
+			save_profile(fname, &o);
+			logmsg("%s updated\n", fname);
+			free(fname);
 
-				// save configuration
-				save_profile(fname, &o);
-				logmsg("%s updated\n", fname);
-				free(fname);
-
-				// configure mtu
-				net_set_mtu(tunnel.bridge_device_name, tunnel.overlay.mtu);
-				net_set_mtu(tunnel.tap_device_name, tunnel.overlay.mtu);
-			}
-
+			// configure mtu
+			net_set_mtu(tunnel.bridge_device_name, tunnel.overlay.mtu);
+			net_set_mtu(tunnel.tap_device_name, tunnel.overlay.mtu);
 		}
 
 	}
