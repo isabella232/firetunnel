@@ -34,15 +34,5 @@ seccomp.parent sendto,write,read,close,open,openat,writev,ioctl,socket,connect,f
 dns 1.1.1.1
 # Quad9
 dns 9.9.9.9
-# Level 3
-dns 4.2.2.1
-# Google
-dns 8.8.8.8
-# OpenDNS
-dns 208.67.222.222
-# Yandex
-dns 77.88.8.8
-# DNS.WATCH
-dns 84.200.69.80
-# Comodo Secure DNS
-dns 8.26.56.26
+# CleanBrowsing
+dns 185.228.168.168

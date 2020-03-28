@@ -110,7 +110,7 @@ void dns_set_tunnel(void) {
 	if (name)
 		atoip(name, &tunnel.overlay.dns3);
 	else
-		atoip("8.8.8.8", &tunnel.overlay.dns3);
+		atoip("185.228.168.168", &tunnel.overlay.dns3);
 
 	logmsg("Tunnel DNS %d.%d.%d.%d, %d.%d.%d.%d, %d.%d.%d.%d\n",
 		PRINT_IP(tunnel.overlay.dns1), PRINT_IP(tunnel.overlay.dns2), PRINT_IP(tunnel.overlay.dns3));
