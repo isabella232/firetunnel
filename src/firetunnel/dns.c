@@ -98,19 +98,19 @@ void dns_set_tunnel(void) {
 	if (name)
 		atoip(name, &tunnel.overlay.dns1);
 	else
-		atoip("1.1.1.1", &tunnel.overlay.dns1);
+		atoip("1.1.1.1", &tunnel.overlay.dns1);		// cloudflare
 
 	name = get_fastest();
 	if (name)
 		atoip(name, &tunnel.overlay.dns2);
 	else
-		atoip("9.9.9.9", &tunnel.overlay.dns2);
+		atoip("9.9.9.9", &tunnel.overlay.dns2);		// quad9
 
 	name = get_fastest();
 	if (name)
 		atoip(name, &tunnel.overlay.dns3);
 	else
-		atoip("185.228.168.168", &tunnel.overlay.dns3);
+		atoip("185.228.168.168", &tunnel.overlay.dns3);		// cleanbrowsing
 
 	logmsg("Tunnel DNS %d.%d.%d.%d, %d.%d.%d.%d, %d.%d.%d.%d\n",
 		PRINT_IP(tunnel.overlay.dns1), PRINT_IP(tunnel.overlay.dns2), PRINT_IP(tunnel.overlay.dns3));

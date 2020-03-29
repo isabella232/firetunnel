@@ -172,7 +172,7 @@ typedef struct packet_header_t {
 	uint8_t opcode: 4;
 #endif
 
-	uint8_t sid;		// header compression session id  (opcode O_DATA_COMPRESSED_L2 or -O_DATA_COMPRESSED_L3)
+	uint8_t sid;		// header compression session id  for opcode O_DATA_COMPRESSED_L2 or O_DATA_COMPRESSED_L3
 			// the sid is the hash value for the Connection array
 	uint16_t seq;	// packet sequence number
 	uint32_t timestamp;	// epoch timestamp
@@ -263,7 +263,7 @@ inline static void reset_stats(Tunnel *t) {
 extern int have_syslog;
 extern Tunnel tunnel;
 extern int arg_server;		// run this tunnel end as a server
-#define DEFAULT_PORT_NUMBER 1119 // This is the port number for Battle.net Blizzard's chat/game protocol
+#define DEFAULT_PORT_NUMBER 1119 // This is the port number for battle.net Blizzard's chat/game protocol
 extern int arg_port;		// server UDP port; configured on both client and server
 extern uint32_t arg_remote_addr;	// server UDP address; only configured on the client side of the tunnel
 extern int arg_noscrambling;	// no scrambling

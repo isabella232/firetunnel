@@ -177,7 +177,7 @@ static void parse_args(int argc, char **argv) {
 		tunnel.overlay.mtu = profile_mtu;
 	if (tunnel.overlay.mtu == 0) {  // still 0?
 		// calculate the MTU based on runtime information
-		// 1500 - mac - ip - udp - firetunnel - hmac
+		// 1500 - mac - ip - udp - firetunnel header - hmac
 		tunnel.overlay.mtu = 1500 - 14 - 20 - 8 - sizeof(PacketHeader) - KEY_LEN ;
 	}
 	logmsg("Tunnel mtu %d\n", tunnel.overlay.mtu);
@@ -203,13 +203,13 @@ static int sandbox(void *sandbox_arg) {
 	// mount events are not forwarded between the host the sandbox
 	if (mount(NULL, "/", NULL, MS_SLAVE | MS_REC, NULL) < 0)
 		errExit("mount filesystem as slave");
-	
+
 	// munt /dev/log
 	if (have_syslog) {
 		if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
 			errExit("mounting /dev/log");
 	}
-	
+
 	close(sockpair_fd[0]);
 
 	// ***********************************
@@ -260,14 +260,14 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 	}
-	
+
 	// create /run/firetunnel/chroot directory
 	if (stat(RUN_DIR_CHROOT, &s) == -1) {
 		if (mkdir(RUN_DIR_CHROOT, 0755) == -1) {
 			fprintf(stderr, "Error: cannot create %s directory\n", RUN_DIR_CHROOT);
 			exit(1);
 		}
-		
+
 		// check /dev/log file
 		struct stat s;
 		if (stat("/dev/log", &s) == 0) {
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
 			    	fprintf(stderr, "Error: cannot create %s directory\n", RUN_DEV_DIR);
 			    	exit(1);
 			  }
-	
+
 			// create /dev/log and mount it
 			FILE *fp = fopen(RUN_DEVLOG_FILE, "w");
 			if (!fp)
@@ -286,18 +286,18 @@ int main(int argc, char **argv) {
 			else {
 				fprintf(fp, "\n");
 				fclose(fp);
-//				if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
-//					errExit("mounting /dev/log");
+				if (mount("/dev/log", RUN_DEVLOG_FILE, NULL, MS_BIND|MS_REC, NULL) < 0)
+					errExit("mounting /dev/log");
 			}
 		}
 	}
-	
+
 	// check againg for chrooted /dev/log and print a warning
 	if (stat(RUN_DEVLOG_FILE, &s) == -1) {
 		fprintf(stderr, "Warning: cannot access syslog, no messages will be available\n");
 		have_syslog = 0;
 	}
-		
+
 	// initialize keys
 	init_keys((uint16_t) arg_port);
 

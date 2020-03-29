@@ -156,7 +156,7 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	int compressed = 0;
 	if (tunnel.stats.udp_tx_pkt)
 		compressed = (int) (100 * ((float) tunnel.stats.udp_tx_compressed_pkt / (float) tunnel.stats.udp_tx_pkt));
-	sprintf(ptr, "%s: tx %u compressed %d%% (htable %u/%u); rx %u, DNS %u, drop %u: ",
+	sprintf(ptr, "%s: tx %u compressed %d%% (%u/%u); rx %u/%u, drop %u: %u/%u/%u/%u/%u",
 		type,
 		tunnel.stats.udp_tx_pkt,
 		compressed,
@@ -164,27 +164,13 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 		tunnel.stats.compress_hash_cnt_l3,
 		tunnel.stats.udp_rx_pkt,
 		tunnel.stats.eth_rx_dns,
-		tunnel.stats.udp_rx_drop_pkt);
+		tunnel.stats.udp_rx_drop_pkt,
+		tunnel.stats.udp_rx_drop_timestamp_pkt,
+		tunnel.stats.udp_rx_drop_seq_pkt,
+		tunnel.stats.udp_rx_drop_addr_pkt,
+		tunnel.stats.udp_rx_drop_blake2_pkt,
+		tunnel.stats.udp_rx_drop_padding_pkt);
 	ptr += strlen(ptr);
-
-	if (tunnel.stats.udp_rx_drop_timestamp_pkt) {
-		sprintf(ptr, "tstamp %u, ", tunnel.stats.udp_rx_drop_timestamp_pkt);
-		ptr += strlen(ptr);
-	}
-	if (tunnel.stats.udp_rx_drop_seq_pkt) {
-		sprintf(ptr, "seq %u, ", tunnel.stats.udp_rx_drop_seq_pkt);
-		ptr += strlen(ptr);
-	}
-	if (tunnel.stats.udp_rx_drop_addr_pkt) {
-		sprintf(ptr, "addr %u, ", tunnel.stats.udp_rx_drop_addr_pkt);
-		ptr += strlen(ptr);
-	}
-	if (tunnel.stats.udp_rx_drop_blake2_pkt) {
-		printf(ptr, "blake2 %u, ", tunnel.stats.udp_rx_drop_blake2_pkt);
-		ptr += strlen(ptr);
-	}
-	if (tunnel.stats.udp_rx_drop_padding_pkt)
-		sprintf(ptr, "padding %u", tunnel.stats.udp_rx_drop_padding_pkt);
 
 	// print stats message on console
 	printf("%s\n", buf);
