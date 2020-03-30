@@ -29,7 +29,7 @@ defaultgw 10.10.20.1
 seccomp.child    ioctl,write,read,close,open,openat,writev,select,sendto,recvfrom,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
 seccomp.parent sendto,write,read,close,open,openat,writev,ioctl,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
 
-# DNS servers - not more than 16 are allowed
+# DNS servers - not more than 3 are allowed
 # Cloudflare
 dns 1.1.1.1
 # Quad9

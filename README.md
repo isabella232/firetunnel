@@ -51,9 +51,7 @@ Everything is integrated seamlessly with Firejail.
 
 Compile-time dependencies: libseccomp (https://github.com/seccomp/libseccomp)
 
-Run-time dependencies: dnsutils (https://www.isc.org)
-
-On Debian/Ubuntu run "sudo apt-get install build-essential git libseccomp-dev dnsutils"
+On Debian/Ubuntu run "sudo apt-get install build-essential git libseccomp-dev"
 
 Compile and install:
 `````

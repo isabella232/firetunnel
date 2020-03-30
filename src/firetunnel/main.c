@@ -139,7 +139,7 @@ static void parse_args(int argc, char **argv) {
 		else if (strncmp(argv[i], "--bridge=", 9) == 0)
 			strncpy(tunnel.bridge_device_name, argv[i] + 9, IFNAMSIZ);
 		else if (strncmp(argv[i], "--dns=", 6) == 0)
-			dns_test(argv[i] + 6);
+			dns_set_tunnel(argv[i] + 6);
 		else if (strncmp(argv[i], "--profile=", 10) == 0)
 			profile_name = argv[i] + 10;
 		else {
@@ -150,7 +150,6 @@ static void parse_args(int argc, char **argv) {
 	}
 
 	load_profile(profile_name);
-	dns_set_tunnel();
 
 	// when running as a client, the first argument to follow is the server IP address
 	if (!arg_server && i  < argc) {

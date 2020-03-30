@@ -418,8 +418,7 @@ void load_profile(const char *fname);
 void save_profile(const char *fname, TOverlay *o);
 
 // dns.c
-void dns_test(const char *server_ip);
-void dns_set_tunnel(void);
+void dns_set_tunnel(const char *dns_ip);
 
 // compress_l3.c
 static inline int compress_shaper(int cnt) {

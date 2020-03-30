@@ -141,8 +141,7 @@ Network address translation is implemented in the system firewall (netfilter) in
 
 .TP
 \fB\-\-dns=address
-Add this DNS server to the list of DNS servers. The server will test each DNS server in the list
-and pick up the fastest three.
+Add this DNS server to the list of servers.
 
 .TP
 \fB\-\-mtu=number

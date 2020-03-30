@@ -81,7 +81,7 @@ static void profile_check_line(char *ptr, int lineno, const char *fname) {
 	}
 
 	if (strncmp(ptr, "dns ", 4) == 0) {
-		dns_test(ptr + 4);
+		dns_set_tunnel(ptr + 4);
 		return;
 	}
 
@@ -191,7 +191,7 @@ void load_profile(const char *fname) {
 void save_profile(const char *fname, TOverlay *o) {
 	assert(fname);
 	assert(o);
-	
+
 	FILE *fp = fopen(fname, "w");
 	if (!fp) {
 		fprintf(stderr, "Error: cannot open runtime file\n");
