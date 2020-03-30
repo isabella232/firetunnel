@@ -108,6 +108,7 @@ void child(int socket) {
 						memset(&tunnel.remote_sock_addr, 0, sizeof(tunnel.remote_sock_addr));
 					compress_l2_init();
 					compress_l3_init();
+					compress_l4_init();
 				}
 
 				tunnel.connect_ttl = 0;
@@ -118,6 +119,7 @@ void child(int socket) {
 				statscnt = 0;
 				update_compress_l2_stats();
 				update_compress_l3_stats();
+				update_compress_l4_stats();
 				pkt_print_stats(txudpframe, tunnel.udpfd);
 			}
 
@@ -127,6 +129,7 @@ void child(int socket) {
 					int direction = (arg_server)? S2C: C2S;
 					print_compress_l2_table(direction);
 					print_compress_l3_table(direction);
+					print_compress_l4_table(direction);
 					printf("\n");
 				}
 			}
@@ -151,28 +154,47 @@ void child(int socket) {
 				dbg_printf("error not connected\n");
 			else if (pkt_is_ipv6(udpframe->eth, nbytes))
 				dbg_printf("ipv6 drop\n");
-			else if (pkt_is_dns_AAAA(udpframe->eth, nbytes))
-				dbg_printf("DNS AAAA drop\n");
+//			else if (pkt_is_dns_AAAA(udpframe->eth, nbytes))
+//				dbg_printf("DNS AAAA drop\n");
 			else {
 				int compression_l2 = 0;
 				int compression_l3 = 0;
+				int compression_l4 = 0;
 				uint8_t sid;	// session id if compression is set
-				if (pkt_is_dns(udpframe->eth, nbytes))
-					tunnel.stats.eth_rx_dns++;
 
+				if (pkt_is_dns(udpframe->eth, nbytes)) {
+					dbg_printf("DNS ");
+					tunnel.stats.eth_rx_dns++;
+				}
 				int direction = (arg_server)? S2C: C2S;
-				if (pkt_is_ip(udpframe->eth, nbytes))
+				if (pkt_is_tcp(udpframe->eth, nbytes) || pkt_is_udp(udpframe->eth, nbytes)) {
+					dbg_printf("L4 ");
+					compression_l4 = classify_l4(udpframe->eth, &sid, direction);
+				}
+				else if (pkt_is_ip(udpframe->eth, nbytes)) {
+					dbg_printf("L3 ");
 					compression_l3 = classify_l3(udpframe->eth, &sid, direction);
-				else
+				}
+				else {
+					dbg_printf("L2 ");
 					compression_l2 = classify_l2(udpframe->eth, &sid, direction);
+				}
 
 				// set header
 				tunnel.seq++;
 				PacketHeader hdr;
 				memset(&hdr, 0, sizeof(hdr));
 				uint8_t *ethptr = udpframe->eth;
-				if (compression_l3) {
-					dbg_printf("compressing L3");
+				if (compression_l4) {
+					dbg_printf("compL4 ");
+					int rv = compress_l4(udpframe->eth, nbytes, sid, direction);
+					nbytes -= rv;
+					ethptr += rv;
+					pkt_set_header(&hdr, O_DATA_COMPRESSED_L4, tunnel.seq);
+					hdr.sid = sid;
+				}
+				else if (compression_l3) {
+					dbg_printf("compL3 ");
 					int rv = compress_l3(udpframe->eth, nbytes, sid, direction);
 					nbytes -= rv;
 					ethptr += rv;
@@ -180,7 +202,7 @@ void child(int socket) {
 					hdr.sid = sid;
 				}
 				else if (compression_l2) {
-					dbg_printf("compressing L2 ");
+					dbg_printf("compL2 ");
 					int rv = compress_l2(udpframe->eth, nbytes, sid, direction);
 					nbytes -= rv;
 					ethptr += rv;
@@ -235,31 +257,38 @@ void child(int socket) {
 					       ntohs(client_addr.sin_port));
 					compress_l2_init();
 					compress_l3_init();
+					compress_l4_init();
 				}
 
 				uint8_t opcode = udpframe->header.opcode;
-				if (opcode == O_DATA || opcode == O_DATA_COMPRESSED_L3 ||
-				    opcode == O_DATA_COMPRESSED_L2) {
-					dbg_printf("data ");
-
+				if (opcode == O_DATA || opcode == O_DATA_COMPRESSED_L4 ||
+				    opcode == O_DATA_COMPRESSED_L3 || opcode == O_DATA_COMPRESSED_L2) {
 					// descramble
 					descramble(udpframe->eth, nbytes - hlen - KEY_LEN, &udpframe->header);
 					nbytes -= hlen + KEY_LEN;
 					int direction = (arg_server)? C2S: S2C;
 					uint8_t *ethstart = udpframe->eth;
+					if (opcode == O_DATA_COMPRESSED_L4) {
+						dbg_printf("decompL4 ");
+						rv = decompress_l4(ethstart, nbytes, udpframe->header.sid, direction);
+						ethstart -= rv;
+						nbytes += rv;
+					}
 					if (opcode == O_DATA_COMPRESSED_L3) {
-						dbg_printf("decompress ");
+						dbg_printf("decompL3 ");
 						rv = decompress_l3(ethstart, nbytes, udpframe->header.sid, direction);
 						ethstart -= rv;
 						nbytes += rv;
 					}
 					else if (opcode == O_DATA_COMPRESSED_L2) {
-						dbg_printf("decompress L2 ");
+						dbg_printf("decompL2 ");
 						rv = decompress_l2(ethstart, nbytes, udpframe->header.sid, direction);
 						ethstart -= rv;
 						nbytes += rv;
 					}
-					if (pkt_is_ip(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes)) // TODO: why udp???
+					if (pkt_is_tcp(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes))
+						classify_l4(ethstart, NULL, direction);
+					else if (pkt_is_ip(ethstart, nbytes))
 						classify_l3(ethstart, NULL, direction);
 					else
 						classify_l2(ethstart, NULL, direction);
@@ -297,7 +326,7 @@ void child(int socket) {
 
 						compress_l2_init();
 						compress_l3_init();
-
+						compress_l4_init();
 					}
 					tunnel.connect_ttl = CONNECT_TTL;
 

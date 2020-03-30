@@ -156,9 +156,10 @@ typedef struct packet_header_t {
 #define O_HELLO 0
 #define O_MESSAGE 1
 #define O_DATA  2
-#define O_DATA_COMPRESSED_L3  3
-#define O_DATA_COMPRESSED_L2  4
-#define O_MAX 5 // the last one
+#define O_DATA_COMPRESSED_L2  3
+#define O_DATA_COMPRESSED_L3  4
+#define O_DATA_COMPRESSED_L4  5
+#define O_MAX 6 // the last one
 
 // flags
 #define F_SYNC 1 	//  a node in disconnected state sends this flag in hello packet;
@@ -215,6 +216,8 @@ typedef struct tstats_t {
 	unsigned compress_hash_cnt_l2;	// number of active entries in the hash table
 	unsigned compress_hash_collision_l3;
 	unsigned compress_hash_cnt_l3;	// number of active entries in the hash table
+	unsigned compress_hash_collision_l4;
+	unsigned compress_hash_cnt_l4;	// number of active entries in the hash table
 	unsigned udp_tx_compressed_pkt;
 } TStats;
 
@@ -353,7 +356,7 @@ static inline int pkt_is_udp(uint8_t *pkt, int nbytes) { // pkt - start of the E
 	if (nbytes < (14 + 20 + 8))// mac + ip + udp
 		return 0;
 	if (*(pkt + 12) == 0x08 && *(pkt + 13) == 0 && // ip protocol
-	    * (pkt + 23) == 17) // udp
+	    * (pkt + 23) == 0x11) // udp
 		return 1;
 
 	return 0;
@@ -453,5 +456,15 @@ void update_compress_l2_stats(void);
 int classify_l2(uint8_t *pkt, uint8_t *sid, int direction);
 int compress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
 int decompress_l2(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
+
+// compress_l4.c
+int compress_l4_size(void);
+void compress_l4_init(void);
+void print_compress_l4_table(int direction);
+void update_compress_l4_stats(void);
+int classify_l4(uint8_t *pkt, uint8_t *sid, int direction);
+int compress_l4(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
+int decompress_l4(uint8_t *pkt, int nbytes, uint8_t sid, int direction);
+
 
 #endif

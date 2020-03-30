@@ -24,6 +24,7 @@
 // the session structure stores the header bytes that don't change
 // the bytes that change are sent out  -> structure NewHeader
 //*******************************************************************
+// MAC and IP
 typedef struct ip_session_t {	// offset
 	uint8_t mac[14];	// 0 - ethernet header
 	uint16_t ver_ihl_tos;	// 14 - ip
@@ -146,7 +147,7 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 			rv = compress_shaper(conn->cnt);
 		}
 		else {
-			dbg_printf("replace l2 hash %d\n", hash);
+			dbg_printf("replace l3 hash %d\n", hash);
 			tunnel.stats.compress_hash_collision_l3++;
 			memcpy(&conn->s, &s, sizeof(IpSession));
 			conn->cnt = 1;

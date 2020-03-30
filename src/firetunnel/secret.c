@@ -79,7 +79,7 @@ void init_keys(uint16_t port) {
 uint8_t *get_hash(uint8_t *in, unsigned inlen, uint32_t timestamp, uint32_t seq) {
 	// grab the key from the dictionary
 	int index = (seq + timestamp) % KEY_MAX;
-	dbg_printf("authindex %d ", index);
+	dbg_printf("a:%d ", index);
 	fflush(0);
 	memcpy(key, auth_dictionary + index * KEY_LEN, KEY_LEN);
 
