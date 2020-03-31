@@ -156,12 +156,13 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	int compressed = 0;
 	if (tunnel.stats.udp_tx_pkt)
 		compressed = (int) (100 * ((float) tunnel.stats.udp_tx_compressed_pkt / (float) tunnel.stats.udp_tx_pkt));
-	sprintf(ptr, "%s: tx %u compressed %d%% (%u/%u); rx %u/%u, drop %u: %u/%u/%u/%u/%u",
+	sprintf(ptr, "%s: tx %u comp %d%% hash %u/%u/%u; rx %u/%u, drop %u: %u/%u/%u/%u/%u",
 		type,
 		tunnel.stats.udp_tx_pkt,
 		compressed,
 		tunnel.stats.compress_hash_cnt_l2,
 		tunnel.stats.compress_hash_cnt_l3,
+		tunnel.stats.compress_hash_cnt_l4,
 		tunnel.stats.udp_rx_pkt,
 		tunnel.stats.eth_rx_dns,
 		tunnel.stats.udp_rx_drop_pkt,

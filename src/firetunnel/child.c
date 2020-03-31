@@ -154,6 +154,7 @@ void child(int socket) {
 				dbg_printf("error not connected\n");
 			else if (pkt_is_ipv6(udpframe->eth, nbytes))
 				dbg_printf("ipv6 drop\n");
+			// todo: respond with NXDOMAIN to AAAA queries; for now we let them go through
 //			else if (pkt_is_dns_AAAA(udpframe->eth, nbytes))
 //				dbg_printf("DNS AAAA drop\n");
 			else {
@@ -162,12 +163,16 @@ void child(int socket) {
 				int compression_l4 = 0;
 				uint8_t sid;	// session id if compression is set
 
+				int is_dns = 0; 	// force DNS in L3 compression instead of L4 compression
+						// DNS uses a random UDP port number for each request
+						// it will mess up L4 compression table
 				if (pkt_is_dns(udpframe->eth, nbytes)) {
 					dbg_printf("DNS ");
 					tunnel.stats.eth_rx_dns++;
+					is_dns = 1;
 				}
 				int direction = (arg_server)? S2C: C2S;
-				if (pkt_is_tcp(udpframe->eth, nbytes) || pkt_is_udp(udpframe->eth, nbytes)) {
+				if (!is_dns && (pkt_is_tcp(udpframe->eth, nbytes) || pkt_is_udp(udpframe->eth, nbytes))) {
 					dbg_printf("L4 ");
 					compression_l4 = classify_l4(udpframe->eth, &sid, direction);
 				}
