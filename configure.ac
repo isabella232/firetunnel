@@ -1,5 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT(firetunnel, 0.8, netblue30@yahoo.com, , http://firejail.wordpress.com)
+AC_INIT(firetunnel, 0.8.2, netblue30@yahoo.com, , http://firejail.wordpress.com)
 AC_CONFIG_SRCDIR([src/firetunnel/main.c])
 #AC_CONFIG_HEADERS([config.h])
 
