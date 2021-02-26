@@ -299,7 +299,10 @@ int main(int argc, char **argv) {
 	}
 
 	// initialize keys
+	printf("initializing encryption keys... ");
+	fflush(0);
 	init_keys((uint16_t) arg_port);
+	printf("done!\n");
 
 	// open tap device
 	tunnel.tapfd = net_tap_open(tunnel.tap_device_name);

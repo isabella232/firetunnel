@@ -353,11 +353,11 @@ char *net_get_nat_if(void) {
 
 void net_set_netfilter(char *ifname) {
 	assert(ifname);
-	char *cmd;
 
 	// find iptables command
 	struct stat s;
 	char *iptables = NULL;
+
 	if (stat("/sbin/iptables", &s) == 0)
 		iptables = "/sbin/iptables";
 	else if (stat("/usr/sbin/iptables", &s) == 0)
@@ -369,8 +369,9 @@ void net_set_netfilter(char *ifname) {
 
 	// delete rule
 	// iptables -t nat -D POSTROUTING -o eth0 -s 10.10.20.0/24  -j MASQUERADE
-	if (asprintf(&cmd, "iptables -t nat -D POSTROUTING -o %s -s %d.%d.%d.%d/%d  -j MASQUERADE",
-		ifname, PRINT_IP(tunnel.overlay.netaddr), mask2bits(tunnel.overlay.netmask)) == -1)
+	char *cmd;
+	if (asprintf(&cmd, "%s -t nat -D POSTROUTING -o %s -s %d.%d.%d.%d/%d  -j MASQUERADE",
+		iptables, ifname, PRINT_IP(tunnel.overlay.netaddr), mask2bits(tunnel.overlay.netmask)) == -1)
 		errExit("asprintf");
 	int rv = system(cmd);	// this could fail if no shuc rule is present in the table
 	(void) rv;
@@ -378,8 +379,8 @@ void net_set_netfilter(char *ifname) {
 
 	// add rule
 	// iptables -t nat -A POSTROUTING -o eth0 -s 10.10.20.0/24  -j MASQUERADE
-	if (asprintf(&cmd, "iptables -t nat -A POSTROUTING -o %s -s %d.%d.%d.%d/%d  -j MASQUERADE",
-		ifname, PRINT_IP(tunnel.overlay.netaddr), mask2bits(tunnel.overlay.netmask)) == -1)
+	if (asprintf(&cmd, "%s -t nat -A POSTROUTING -o %s -s %d.%d.%d.%d/%d  -j MASQUERADE",
+		iptables, ifname, PRINT_IP(tunnel.overlay.netaddr), mask2bits(tunnel.overlay.netmask)) == -1)
 		errExit("asprintf");
 	if (system(cmd))
 		goto errexit;
