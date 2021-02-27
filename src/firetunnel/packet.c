@@ -171,6 +171,12 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	// print stats message on console
 	printf("%s\n", buf);
 
+	// clean stats
+	tunnel.stats.udp_tx_pkt = 0;
+	tunnel.stats.udp_tx_compressed_pkt = 0;
+	tunnel.stats.udp_rx_pkt = 0;
+	tunnel.stats.eth_rx_dns = 0;
+
 	// send the message to the client
 	if (arg_server && tunnel.state == S_CONNECTED) {
 		// set header
