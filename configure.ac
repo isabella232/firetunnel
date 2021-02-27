@@ -1,3 +1,16 @@
+#
+# Note:
+#
+# If for any reason autoconf fails, run "autoreconf -i --install " and try again.
+# This is how the error looks like on Arch Linux:
+#        ./configure: line 3064: syntax error near unexpected token `newline'
+#        ./configure: line 3064: `AX_CHECK_COMPILE_FLAG('
+#
+# We rely solely on autoconf, without automake. Apparently, in this case
+# the macros from m4 directory are not picked up by default by automake.
+# "autoreconf -i --install" seems to fix the problem.
+#
+
 AC_PREREQ([2.68])
 AC_INIT(firetunnel, 0.8.2, netblue30@yahoo.com, , http://firejail.wordpress.com)
 AC_CONFIG_SRCDIR([src/firetunnel/main.c])
@@ -8,31 +21,26 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
+AC_CONFIG_MACRO_DIR([m4])
 HAVE_SPECTRE="no"
-AC_MSG_CHECKING(for Spectre mitigation support in gcc or clang compiler)
-AS_IF([test "$CC" = "gcc"], [
-	HAVE_SPECTRE="yes"
-	$CC -mindirect-branch=thunk -c dummy.c || HAVE_SPECTRE="no"
-	rm -f dummy.o
-	AS_IF([test "$HAVE_SPECTRE" = "yes"], [
-		EXTRA_CFLAGS+=" -mindirect-branch=thunk "
-	])
-])
-AS_IF([test "$CC" = "clang"], [
-	HAVE_SPECTRE="yes"
-	$CC -mretpoline -c dummy.c || HAVE_SPECTRE="no"
-	rm -f dummy.o
-	AS_IF([test "$HAVE_SPECTRE" = "yes"], [
-		EXTRA_CFLAGS+=" -mretpoline "
-	])
-])
-AS_IF([test "$HAVE_SPECTRE" = "yes"], [
-	AC_MSG_RESULT(yes)
-])
-AS_IF([test "$HAVE_SPECTRE" = "no"], [
-	AC_MSG_RESULT(... not available)
-])
+AX_CHECK_COMPILE_FLAG(
+    [-mindirect-branch=thunk],
+    [HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -mindirect-branch=thunk"]
+)
+AX_CHECK_COMPILE_FLAG(
+    [-mretpoline],
+    [HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -mretpoline"]
+)
+AX_CHECK_COMPILE_FLAG(
+    [-fstack-clash-protection],
+    [HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -fstack-clash-protection"]
+)
+AX_CHECK_COMPILE_FLAG(
+    [-fstack-protector-strong],
+    [HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -fstack-protector-strong"]
+)
 AC_SUBST([EXTRA_CFLAGS])
+AC_SUBST([EXTRA_LDFLAGS])
 
 
 HAVE_SECCOMP=""

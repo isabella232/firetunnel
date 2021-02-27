@@ -627,10 +627,10 @@ LIBOBJS
 EGREP
 GREP
 CPP
-EXTRA_LDFLAGS
 HAVE_GCOV
 HAVE_FATAL_WARNINGS
 HAVE_SECCOMP
+EXTRA_LDFLAGS
 EXTRA_CFLAGS
 RANLIB
 INSTALL_DATA
@@ -3057,45 +3057,154 @@ else
 fi
 
 
+
 HAVE_SPECTRE="no"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Spectre mitigation support in gcc or clang compiler" >&5
-$as_echo_n "checking for Spectre mitigation support in gcc or clang compiler... " >&6; }
-if test "$CC" = "gcc"; then :
 
-	HAVE_SPECTRE="yes"
-	$CC -mindirect-branch=thunk -c dummy.c || HAVE_SPECTRE="no"
-	rm -f dummy.o
-	if test "$HAVE_SPECTRE" = "yes"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mindirect-branch=thunk" >&5
+$as_echo_n "checking whether C compiler accepts -mindirect-branch=thunk... " >&6; }
+if ${ax_cv_check_cflags___mindirect_branch_thunk+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
 
-		EXTRA_CFLAGS+=" -mindirect-branch=thunk "
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mindirect-branch=thunk"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___mindirect_branch_thunk=yes
+else
+  ax_cv_check_cflags___mindirect_branch_thunk=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mindirect_branch_thunk" >&5
+$as_echo "$ax_cv_check_cflags___mindirect_branch_thunk" >&6; }
+if test "x$ax_cv_check_cflags___mindirect_branch_thunk" = xyes; then :
+  HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -mindirect-branch=thunk"
+
+else
+  :
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mretpoline" >&5
+$as_echo_n "checking whether C compiler accepts -mretpoline... " >&6; }
+if ${ax_cv_check_cflags___mretpoline+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -mretpoline"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___mretpoline=yes
+else
+  ax_cv_check_cflags___mretpoline=no
 fi
-if test "$CC" = "clang"; then :
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___mretpoline" >&5
+$as_echo "$ax_cv_check_cflags___mretpoline" >&6; }
+if test "x$ax_cv_check_cflags___mretpoline" = xyes; then :
+  HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -mretpoline"
 
-	HAVE_SPECTRE="yes"
-	$CC -mretpoline -c dummy.c || HAVE_SPECTRE="no"
-	rm -f dummy.o
-	if test "$HAVE_SPECTRE" = "yes"; then :
-
-		EXTRA_CFLAGS+=" -mretpoline "
-
+else
+  :
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-clash-protection" >&5
+$as_echo_n "checking whether C compiler accepts -fstack-clash-protection... " >&6; }
+if ${ax_cv_check_cflags___fstack_clash_protection+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fstack-clash-protection"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fstack_clash_protection=yes
+else
+  ax_cv_check_cflags___fstack_clash_protection=no
 fi
-if test "$HAVE_SPECTRE" = "yes"; then :
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
 fi
-if test "$HAVE_SPECTRE" = "no"; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fstack_clash_protection" >&5
+$as_echo "$ax_cv_check_cflags___fstack_clash_protection" >&6; }
+if test "x$ax_cv_check_cflags___fstack_clash_protection" = xyes; then :
+  HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -fstack-clash-protection"
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ... not available" >&5
-$as_echo "... not available" >&6; }
-
+else
+  :
 fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstack-protector-strong" >&5
+$as_echo_n "checking whether C compiler accepts -fstack-protector-strong... " >&6; }
+if ${ax_cv_check_cflags___fstack_protector_strong+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fstack-protector-strong"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fstack_protector_strong=yes
+else
+  ax_cv_check_cflags___fstack_protector_strong=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fstack_protector_strong" >&5
+$as_echo "$ax_cv_check_cflags___fstack_protector_strong" >&6; }
+if test "x$ax_cv_check_cflags___fstack_protector_strong" = xyes; then :
+  HAVE_SPECTRE="yes" && EXTRA_CFLAGS+=" -fstack-protector-strong"
+
+else
+  :
+fi
+
+
 
 
 
@@ -3142,7 +3251,6 @@ fi
 
 
 # checking pthread library
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lpthread" >&5
 $as_echo_n "checking for main in -lpthread... " >&6; }
 if ${ac_cv_lib_pthread_main+:} false; then :
