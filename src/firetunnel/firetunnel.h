@@ -208,7 +208,6 @@ typedef struct tstats_t {
 	unsigned udp_rx_drop_seq_pkt;
 	unsigned udp_rx_drop_addr_pkt;
 	unsigned udp_rx_drop_blake2_pkt;
-	unsigned udp_rx_drop_padding_pkt;
 	unsigned eth_rx_dns;
 
 	// header compression
@@ -423,7 +422,8 @@ void save_profile(const char *fname, TOverlay *o);
 // dns.c
 void dns_set_tunnel(const char *dns_ip);
 
-// compress_l3.c
+// The following frames on a new connection are sent uncompressed:
+//       1, 2, 3, 5, 10, 15, 20, 40, 60, 80...
 static inline int compress_shaper(int cnt) {
 	int rv = 0;
 

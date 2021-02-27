@@ -76,6 +76,7 @@ int pkt_check_header(UdpFrame *pkt, unsigned len, struct sockaddr_in *client_add
 	uint32_t timestamp = ntohl(header->timestamp);
 	uint32_t delta = diff_uint32(current_timestamp, timestamp);
 	if (delta > TIMESTAMP_DELTA_MAX) {
+		fprintf(stderr, "Warning: timestamp drop, delta %u\n",  delta);
 		tunnel.stats.udp_rx_drop_timestamp_pkt++;
 		return 0;
 	}
@@ -85,6 +86,7 @@ int pkt_check_header(UdpFrame *pkt, unsigned len, struct sockaddr_in *client_add
 	uint16_t seq = ntohs(header->seq);
 	uint32_t index = seq  & SEQ_BITMAP;
 	if (timestamp <= scache[index]) {
+		fprintf(stderr, "Warning: seq drop\n");
 		tunnel.stats.udp_rx_drop_seq_pkt++;
 		return 0;
 	}
@@ -156,21 +158,14 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	int compressed = 0;
 	if (tunnel.stats.udp_tx_pkt)
 		compressed = (int) (100 * ((float) tunnel.stats.udp_tx_compressed_pkt / (float) tunnel.stats.udp_tx_pkt));
-	sprintf(ptr, "%s: tx %u comp %d%% hash %u/%u/%u; rx %u/%u, drop %u: %u/%u/%u/%u/%u",
+	sprintf(ptr, "%s: tun tx/comp/drop %u/%d%%/%d; eth rx %u; DNS %u",
 		type,
 		tunnel.stats.udp_tx_pkt,
 		compressed,
-		tunnel.stats.compress_hash_cnt_l2,
-		tunnel.stats.compress_hash_cnt_l3,
-		tunnel.stats.compress_hash_cnt_l4,
-		tunnel.stats.udp_rx_pkt,
-		tunnel.stats.eth_rx_dns,
 		tunnel.stats.udp_rx_drop_pkt,
-		tunnel.stats.udp_rx_drop_timestamp_pkt,
-		tunnel.stats.udp_rx_drop_seq_pkt,
-		tunnel.stats.udp_rx_drop_addr_pkt,
-		tunnel.stats.udp_rx_drop_blake2_pkt,
-		tunnel.stats.udp_rx_drop_padding_pkt);
+
+		tunnel.stats.udp_rx_pkt,
+		tunnel.stats.eth_rx_dns);
 	ptr += strlen(ptr);
 
 	// print stats message on console
