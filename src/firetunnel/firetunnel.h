@@ -136,19 +136,11 @@ static inline void dbg_printf(char *fmt, ...) {
 // - a drift of TIMESTAMP_DELTA_MAX is acceptable; this should also cover the packet trip
 #define TIMESTAMP_DELTA_MAX (TIMEOUT) // client/server maximum timestamp delta for accepting packets
 
-// Packet sequence
-// - it is incremented every time a packet is sent
-// - it is reseted when the session is disconnected
-// - a mechanism to filter packet duplicates is implemented in packet.c
-//        - this limits the incoming UDP speed to SEQ_DELTA_MAX packets per second
-#define SEQ_DELTA_MAX 8192  // client/server maximum seq delta for accepting packets - power of 2
-#define SEQ_BITMAP (SEQ_DELTA_MAX - 1)
-
 // BLAKE2 configuration
 #define SECRET_FILE (SYSCONFDIR "/firetunnel.secret")	// use this file to generate a huge (KEY_MAX) list of keys
 #define KEY_LEN 16		// BLAKE2-128 (16 byte key/result)
 // this is equivalent to a regular HMAC-MD5/HMAC-SHA1, but faster and  cryptographically stronger
-#define KEY_MAX SEQ_DELTA_MAX	// maximum number of keys  in the list
+#define KEY_MAX 8192	// maximum number of keys  in the list
 
 // udp packet structure:    | ip/udp transport | tunnel header | Ethernet frame | padding | BLACKE2 hash (16/32/64 bytes) |
 typedef struct packet_header_t {
@@ -175,7 +167,11 @@ typedef struct packet_header_t {
 
 	uint8_t sid;		// header compression session id  for opcode O_DATA_COMPRESSED_L2 or O_DATA_COMPRESSED_L3
 			// the sid is the hash value for the Connection array
+
 	uint16_t seq;	// packet sequence number
+			// - it is incremented every time a packet is sent
+			// - it is reseted when the session is disconnected
+
 	uint32_t timestamp;	// epoch timestamp
 } __attribute__((__packed__)) PacketHeader;	// 8 bytes
 
@@ -209,6 +205,7 @@ typedef struct tstats_t {
 	unsigned udp_rx_drop_addr_pkt;
 	unsigned udp_rx_drop_blake2_pkt;
 	unsigned eth_rx_dns;
+	unsigned eth_rx_arp;
 
 	// header compression
 	unsigned compress_hash_collision_l2;

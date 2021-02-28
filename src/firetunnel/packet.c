@@ -21,17 +21,6 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-static uint32_t scache[SEQ_DELTA_MAX];
-static int scache_initialized = 0;
-
-static void scache_init(void) {
-	time_t ts = time(NULL);
-	int i;
-	for (i = 0; i < SEQ_DELTA_MAX; i++)
-		scache[i] = ts - 1;
-	scache_initialized = 1;
-}
-
 void pkt_set_header(PacketHeader *header, uint8_t opcode, uint32_t seq)  {
 	assert(header);
 	memset(header, 0, sizeof(PacketHeader));
@@ -44,9 +33,6 @@ void pkt_set_header(PacketHeader *header, uint8_t opcode, uint32_t seq)  {
 int pkt_check_header(UdpFrame *pkt, unsigned len, struct sockaddr_in *client_addr) {
 	assert(pkt);
 	PacketHeader *header = &pkt->header;
-
-	if (scache_initialized == 0)
-		scache_init();
 
 	// check packet length
 	if (len < sizeof(PacketHeader) + KEY_LEN)
@@ -80,18 +66,6 @@ int pkt_check_header(UdpFrame *pkt, unsigned len, struct sockaddr_in *client_add
 		tunnel.stats.udp_rx_drop_timestamp_pkt++;
 		return 0;
 	}
-
-	// accept packet if bigger timestamp than what we have stored in scache
-	// this basically limits the incoming speed  to SEQ_DELTA_MAX packets per second
-	uint16_t seq = ntohs(header->seq);
-	uint32_t index = seq  & SEQ_BITMAP;
-	if (timestamp <= scache[index]) {
-		fprintf(stderr, "Warning: seq drop\n");
-		tunnel.stats.udp_rx_drop_seq_pkt++;
-		return 0;
-	}
-	else // store timestamp
-		scache[index] = timestamp;
 
 	// check blake2
 	uint8_t *hash = get_hash((uint8_t *)pkt, len - KEY_LEN,
@@ -158,14 +132,15 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	int compressed = 0;
 	if (tunnel.stats.udp_tx_pkt)
 		compressed = (int) (100 * ((float) tunnel.stats.udp_tx_compressed_pkt / (float) tunnel.stats.udp_tx_pkt));
-	sprintf(ptr, "%s: tun tx/comp/drop %u/%d%%/%d; eth rx %u; DNS %u",
+	sprintf(ptr, "%s: tun tx/comp/drop %u/%d%%/%d; eth rx %u; DNS %u; ARP %u",
 		type,
 		tunnel.stats.udp_tx_pkt,
 		compressed,
 		tunnel.stats.udp_rx_drop_pkt,
 
 		tunnel.stats.udp_rx_pkt,
-		tunnel.stats.eth_rx_dns);
+		tunnel.stats.eth_rx_dns,
+		tunnel.stats.eth_rx_arp);
 	ptr += strlen(ptr);
 
 	// print stats message on console
@@ -176,6 +151,7 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	tunnel.stats.udp_tx_compressed_pkt = 0;
 	tunnel.stats.udp_rx_pkt = 0;
 	tunnel.stats.eth_rx_dns = 0;
+	tunnel.stats.eth_rx_arp = 0;
 
 	// send the message to the client
 	if (arg_server && tunnel.state == S_CONNECTED) {

@@ -137,7 +137,7 @@ void child(int socket) {
 			continue;
 		}
 
-		// tap
+		// tap (ethernet)
 		if (FD_ISSET (tunnel.tapfd, &set)) {
 			int nbytes;
 
@@ -154,9 +154,8 @@ void child(int socket) {
 				dbg_printf("error not connected\n");
 			else if (pkt_is_ipv6(udpframe->eth, nbytes))
 				dbg_printf("ipv6 drop\n");
-			// todo: respond with NXDOMAIN to AAAA queries; for now we let them go through
-//			else if (pkt_is_dns_AAAA(udpframe->eth, nbytes))
-//				dbg_printf("DNS AAAA drop\n");
+			else if (pkt_is_dns_AAAA(udpframe->eth, nbytes))
+				dbg_printf("DNS AAAA drop\n");
 			else {
 				int compression_l2 = 0;
 				int compression_l3 = 0;
@@ -176,11 +175,13 @@ void child(int socket) {
 					dbg_printf("L4 ");
 					compression_l4 = classify_l4(udpframe->eth, &sid, direction);
 				}
-				else if (pkt_is_ip(udpframe->eth, nbytes)) {
+				else if (pkt_is_ip(udpframe->eth, nbytes)) { // dns goes here
 					dbg_printf("L3 ");
 					compression_l3 = classify_l3(udpframe->eth, &sid, direction);
 				}
-				else {
+				else { // arp goes here
+					if (pkt_is_arp(udpframe->eth, nbytes))
+						tunnel.stats.eth_rx_arp++;
 					dbg_printf("L2 ");
 					compression_l2 = classify_l2(udpframe->eth, &sid, direction);
 				}
