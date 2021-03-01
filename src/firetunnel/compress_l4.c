@@ -110,7 +110,9 @@ void compress_l4_init(void) {
 void print_compress_l4_table(int direction) {
 	L4Connection *conn = (direction == S2C)? &connection_s2c[0]: &connection_c2s[0];
 	printf("Compression L4 table:\n");
-	printf("   cache collision %d\n", tunnel.stats.compress_hash_collision_l4);
+	printf("   cache collision %0.2f%%, total packets %u\n",
+		collision_ratio(tunnel.stats.compress_hash_total_l4, tunnel.stats.compress_hash_collision_l4),
+		tunnel.stats.compress_hash_total_l4);
 	int i;
 	for (i = 0; i < 256; i++, conn++) {
 		if (conn->active) {
@@ -171,6 +173,7 @@ int classify_l4(uint8_t *pkt, uint8_t *sid, int direction) {
 		conn->active = 1;
 	}
 
+	tunnel.stats.compress_hash_total_l4++;
 	return rv;
 }
 

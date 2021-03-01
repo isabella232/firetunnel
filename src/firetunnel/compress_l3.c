@@ -98,7 +98,9 @@ void compress_l3_init(void) {
 void print_compress_l3_table(int direction) {
 	IpConnection *conn = (direction == S2C)? &connection_s2c[0]: &connection_c2s[0];
 	printf("Compression L3 table:\n");
-	printf("   cache collision %d\n", tunnel.stats.compress_hash_collision_l3);
+	printf("   cache collision %0.2f%%, total packets %u\n",
+		collision_ratio(tunnel.stats.compress_hash_total_l3, tunnel.stats.compress_hash_collision_l3),
+		tunnel.stats.compress_hash_total_l3);
 	int i;
 	for (i = 0; i < 256; i++, conn++) {
 		if (conn->active) {
@@ -159,6 +161,7 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 		conn->active = 1;
 	}
 
+	tunnel.stats.compress_hash_total_l3++;
 	return rv;
 }
 
@@ -167,7 +170,6 @@ int compress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
 //memcpy(&len, pkt + 14 + 2, 2);
 //len = ntohs(len);
 //printf("len %u, nbytes %d\n", len, nbytes);
-
 	(void) direction;
 	(void) nbytes;
 	(void) sid;

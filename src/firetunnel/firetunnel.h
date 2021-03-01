@@ -208,14 +208,27 @@ typedef struct tstats_t {
 	unsigned eth_rx_arp;
 
 	// header compression
-	unsigned compress_hash_collision_l2;
-	unsigned compress_hash_cnt_l2;	// number of active entries in the hash table
+	unsigned compress_hash_total_l2; // total number of entries ever sotred in the table
+	unsigned compress_hash_collision_l2; // total number of collisions
+	unsigned compress_hash_cnt_l2;	// current number of active entries in the hash table
+
+	unsigned compress_hash_total_l3;
 	unsigned compress_hash_collision_l3;
-	unsigned compress_hash_cnt_l3;	// number of active entries in the hash table
+	unsigned compress_hash_cnt_l3;
+
+	unsigned compress_hash_total_l4;
 	unsigned compress_hash_collision_l4;
-	unsigned compress_hash_cnt_l4;	// number of active entries in the hash table
+	unsigned compress_hash_cnt_l4;
+
 	unsigned udp_tx_compressed_pkt;
 } TStats;
+
+static inline float collision_ratio(unsigned total, unsigned collisions) {
+	if (total == 0)
+		return 0;
+	return ((float) collisions / (float) total) * 100;
+}
+
 
 typedef struct toverlay_t {
 	uint32_t netaddr;	// network address - default 10.10.20.0

@@ -66,7 +66,9 @@ void compress_l2_init(void) {
 void print_compress_l2_table(int direction) {
 	MacConnection *conn = (direction == S2C)? connection_s2c: connection_c2s;
 	printf("Compression L2 hash table:\n");
-	printf("   cache collision %d\n", tunnel.stats.compress_hash_collision_l2);
+	printf("   cache collision %0.2f%%, total packets %u\n",
+		collision_ratio(tunnel.stats.compress_hash_total_l2, tunnel.stats.compress_hash_collision_l2),
+		tunnel.stats.compress_hash_total_l2);
 	int i;
 	for (i = 0; i < 256; i++, conn++) {
 		if (conn->active) {
@@ -132,6 +134,7 @@ int classify_l2(uint8_t *pkt, uint8_t *sid, int direction) {
 		conn->active = 1;
 	}
 
+	tunnel.stats.compress_hash_total_l2++;
 	return rv;
 }
 
