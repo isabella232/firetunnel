@@ -292,7 +292,14 @@ void child(int socket) {
 						ethstart -= rv;
 						nbytes += rv;
 					}
-					if (pkt_is_tcp(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes))
+
+					int is_dns = 0;
+					if (pkt_is_dns(ethstart, nbytes)) {
+						dbg_printf("DNS ");
+						is_dns = 1;
+					}
+
+					if (!is_dns && (pkt_is_tcp(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes)))
 						classify_l4(ethstart, NULL, direction);
 					else if (pkt_is_ip(ethstart, nbytes))
 						classify_l3(ethstart, NULL, direction);
