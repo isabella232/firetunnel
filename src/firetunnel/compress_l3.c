@@ -139,6 +139,7 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 	uint8_t *ptr = (uint8_t *) &s;
 	for ( i = 0; i < sizeof(s); i++, ptr++)
 		hash ^= *ptr;
+	hash += s.addr[0] + s.addr[4];
 	if (sid)
 		*sid = hash;
 
