@@ -381,6 +381,7 @@ void pkt_print_stats(UdpFrame *frame, int udpfd);
 #define LOG_MSGS_MAX_TIMEOUT 10	// don't allow not more then 10 messages per TIMEOUT interval
 extern int logcnt;
 void logmsg(char *fmt, ...);
+void print_timestamp(void);
 
 // blake2-ref.c
 int blake2( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen );
@@ -426,8 +427,8 @@ extern uint32_t profile_defaultgw;
 extern uint32_t profile_mtu;
 extern char *profile_child_seccomp;
 extern char *profile_parent_seccomp;
-void load_profile(const char *fname);
-void save_profile(const char *fname, TOverlay *o);
+void profile_load(const char *fname);
+void profile_save(const char *fname, TOverlay *o);
 
 // dns.c
 void dns_set_tunnel(const char *dns_ip);

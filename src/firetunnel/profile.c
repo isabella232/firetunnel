@@ -157,10 +157,10 @@ static void profile_check_line(char *ptr, int lineno, const char *fname) {
 	fprintf(stderr, "Warning: \"%s\" profile entry not supported\n", ptr);
 }
 
-void load_profile(const char *fname) {
+void profile_load(const char *fname) {
 	FILE *fp = fopen(fname, "r");
 	if (!fp) {
-		fprintf(stderr, "Warning: cannot access profile file %s, using default configuration\n", fname);
+		fprintf(stderr, "Warning: cannot access configuration file %s, using default configuration\n", fname);
 		return;
 	}
 
@@ -186,9 +186,10 @@ void load_profile(const char *fname) {
 	}
 
 	fclose(fp);
+	logmsg("configuration loaded from %s\n", fname);
 }
 
-void save_profile(const char *fname, TOverlay *o) {
+void profile_save(const char *fname, TOverlay *o) {
 	assert(fname);
 	assert(o);
 
@@ -216,4 +217,5 @@ void save_profile(const char *fname, TOverlay *o) {
 	fprintf(fp, "ignore mtu\n");
 	fprintf(fp, "ignore dns\n");
 	fclose(fp);
+	logmsg("%s updated\n", fname);
 }

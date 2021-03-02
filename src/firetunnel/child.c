@@ -60,7 +60,9 @@ void child(int socket) {
 
 	if (!arg_server) {
 		pkt_send_hello(txudpframe, tunnel.udpfd);
-		printf("Connecting..."); fflush(0);
+		print_timestamp();
+		printf("Connecting...");
+		fflush(0);
 		timeout.tv_sec = 2;
 	}
 
@@ -91,7 +93,7 @@ void child(int socket) {
 			// send HELLO packet
 			// the client always sends it, regardless of the connection status
 			if (tunnel.state == S_CONNECTED || !arg_server) {
-				dbg_printf("\ntunnel tx hello ");
+				dbg_printf("tunnel tx hello ");
 				pkt_send_hello(txudpframe, tunnel.udpfd);
 				dbg_printf("\n");
 			}
@@ -145,7 +147,7 @@ void child(int socket) {
 			nbytes = read(tunnel.tapfd, udpframe->eth, sizeof(UdpFrame) - hlen);
 			if (nbytes == -1)
 				perror("read");
-			dbg_printf("\ntap rx %d ", nbytes);
+			dbg_printf("tap rx %d ", nbytes);
 
 			// eth header size of 14
 			if (nbytes <=14)
@@ -251,7 +253,7 @@ void child(int socket) {
 
 			// update stats
 			tunnel.stats.udp_rx_pkt++;
-			dbg_printf("\ntunnel rx %d ", nbytes);
+			dbg_printf("tunnel rx %d ", nbytes);
 
 			if (pkt_check_header(udpframe, nbytes, &client_addr)) { // also does BLAKE2 authentication
 				if (tunnel.state == S_CONNECTED)
@@ -378,6 +380,7 @@ void child(int socket) {
 						// quietly drop the packet, it could be a very old one
 					}
 					else {
+						print_timestamp();
 						printf("%s\n", (char *) udpframe->eth);
 					}
 				}

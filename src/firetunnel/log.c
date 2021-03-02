@@ -46,10 +46,18 @@ void logmsg(char *fmt, ...) {
 
 	// write to console
 	time_t t = time(NULL);
-	struct tm* tm_info = localtime(&t);
+	struct tm* tm_info = gmtime(&t);
 	char timestamp[26];
 	strftime(timestamp, 26, "%Y-%m-%d %H:%M:%S", tm_info);
 	fprintf(stderr, "%s %s", timestamp, msg);
 	free(msg);
+}
 
+void print_timestamp(void) {
+	time_t t = time(NULL);
+	struct tm *tm_info = gmtime(&t);
+	char timestamp[26];
+	strftime(timestamp, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+	printf("%s ", timestamp);
+	fflush(0);
 }

@@ -132,6 +132,7 @@ void pkt_print_stats(UdpFrame *frame, int udpfd) {
 	int compressed = 0;
 	if (tunnel.stats.udp_tx_pkt)
 		compressed = (int) (100 * ((float) tunnel.stats.udp_tx_compressed_pkt / (float) tunnel.stats.udp_tx_pkt));
+	print_timestamp();
 	sprintf(ptr, "%s: tun tx/comp/drop %u/%d%%/%d; DNS %u; ARP %u",
 		type,
 		tunnel.stats.udp_tx_pkt,

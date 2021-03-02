@@ -26,13 +26,13 @@ defaultgw 10.10.20.1
 # noseccomp
 
 # seccomp configuration for parent and child processes if seccomp enabled
-seccomp.child    ioctl,write,read,close,open,openat,writev,select,sendto,recvfrom,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
+seccomp.child    lseek,ioctl,write,read,close,open,openat,writev,select,sendto,recvfrom,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
 seccomp.parent sendto,write,read,close,open,openat,writev,ioctl,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
 
 # DNS servers - not more than 3 are allowed
-# Cloudflare
-dns 1.1.1.1
-# Quad9
+# Cloudflare (security)
+dns 1.1.1.2
+# Quad9 (security)
 dns 9.9.9.9
-# CleanBrowsing
+# CleanBrowsing (security)
 dns 185.228.168.168

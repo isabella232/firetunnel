@@ -149,7 +149,7 @@ static void parse_args(int argc, char **argv) {
 		}
 	}
 
-	load_profile(profile_name);
+	profile_load(profile_name);
 
 	// when running as a client, the first argument to follow is the server IP address
 	if (!arg_server && i  < argc) {
@@ -269,7 +269,6 @@ int main(int argc, char **argv) {
 		}
 
 		// check /dev/log file
-		struct stat s;
 		if (stat("/dev/log", &s) == 0) {
 			// create a /dev in chroot directory
 			if (mkdir(RUN_DEV_DIR, 0755) == -1 ||
@@ -299,10 +298,9 @@ int main(int argc, char **argv) {
 	}
 
 	// initialize keys
-	printf("initializing encryption keys... ");
+	logmsg("initializing encryption keys...\n");
 	fflush(0);
 	init_keys((uint16_t) arg_port);
-	printf("done!\n");
 
 	// open tap device
 	tunnel.tapfd = net_tap_open(tunnel.tap_device_name);
@@ -351,8 +349,7 @@ int main(int argc, char **argv) {
 			errExit("asprintf");
 
 		// save configuration
-		save_profile(fname, &tunnel.overlay);
-		logmsg("%s updated\n", fname);
+		profile_save(fname, &tunnel.overlay);
 		free(fname);
 	}
 
@@ -406,8 +403,7 @@ int main(int argc, char **argv) {
 			memcpy(&tunnel.overlay, &o, sizeof(TOverlay));
 
 			// save configuration
-			save_profile(fname, &o);
-			logmsg("%s updated\n", fname);
+			profile_save(fname, &o);
 			free(fname);
 
 			// configure mtu
