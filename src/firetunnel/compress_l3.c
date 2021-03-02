@@ -30,8 +30,8 @@ typedef struct ip_session_t {	// offset
 	uint16_t ver_ihl_tos;	// 14 - ip
 	uint16_t len;		// 16 - use a default value and recalculate in decompress()
 //	uint16_t id;		// 18
-//	uint16_t offset;	// 20
-//	uint8_t ttl;		// 22
+	uint16_t offset;	// 20
+	uint8_t ttl;		// 22
 	uint8_t protocol;	// 23
 	uint16_t checksum;	// 24 - use a default value and recalculate in decompress()
 	uint8_t addr[8];	// 26
@@ -41,8 +41,8 @@ typedef struct ip_session_t {	// offset
 // fields not included in params above
 typedef struct new_header_t {	// offset
 	uint16_t id;		// 18
-	uint16_t offset;	// 20
-	uint8_t ttl;		// 22
+//	uint16_t offset;	// 20
+//	uint8_t ttl;		// 22
 } __attribute__((__packed__)) NewHeader;
 
 int compress_l3_size(void) {
@@ -55,6 +55,8 @@ static void set_session(uint8_t *ptr, IpSession *s) {
 	memcpy(s->mac, ptr, 14);
 	memcpy(&s->ver_ihl_tos, ptr + 14, 2);
 	s->len = 0xc28a;
+	memcpy(&s->offset, ptr + 20, 2);
+	s->ttl = *(ptr + 22);
 	s->protocol = *(ptr + 23);
 	s->checksum = 0x55aa;
 	memcpy(s->addr, ptr + 26, 8);
@@ -73,8 +75,8 @@ static void print_session(IpSession *s) {
 static void set_new_header(uint8_t *ptr, NewHeader *h) {
 	assert(h);
 	memcpy(&h->id, ptr + 18, 2);
-	memcpy(&h->offset, ptr + 20, 2);
-	h->ttl = *(ptr + 22);
+//	memcpy(&h->offset, ptr + 20, 2);
+//	h->ttl = *(ptr + 22);
 }
 
 
@@ -200,8 +202,8 @@ int decompress_l3(uint8_t *pkt, int nbytes, uint8_t sid, int direction) {
 	memcpy(pkt + 16, &len, 2);
 
 	memcpy(pkt + 18, &h.id, 2);
-	memcpy(pkt + 20, &h.offset, 2);
-	*(pkt + 22) = h.ttl;
+	memcpy(pkt + 20, &s->offset, 2);
+	*(pkt + 22) = s->ttl;
 	*(pkt + 23) = s->protocol;
 	memcpy(pkt + 26, s->addr, 8);
 
