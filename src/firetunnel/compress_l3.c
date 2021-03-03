@@ -99,7 +99,7 @@ void compress_l3_init(void) {
 
 void print_compress_l3_table(int direction) {
 	IpConnection *conn = (direction == S2C)? &connection_s2c[0]: &connection_c2s[0];
-	printf("Compression L3 tun tx table:\n");
+	printf("Compression L3 tun tx:\n");
 	printf("   cache collision %0.2f%%, total packets %u\n",
 		collision_ratio(tunnel.stats.compress_hash_total_l3, tunnel.stats.compress_hash_collision_l3),
 		tunnel.stats.compress_hash_total_l3);
