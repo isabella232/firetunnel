@@ -149,8 +149,10 @@ int classify_l4(uint8_t *pkt, uint8_t *sid, int direction) {
 	uint8_t *ptr = (uint8_t *) &s;
 	for ( i = 0; i < sizeof(s); i++, ptr++)
 		hash ^= *ptr;
-	if (sid)
+	if (sid) {
 		*sid = hash;
+		tunnel.stats.compress_hash_total_l4++;
+	}
 
 	L4Connection *conn = (direction == S2C)? &connection_s2c[hash]: &connection_c2s[hash];
 	if (conn->active) {
@@ -171,7 +173,6 @@ int classify_l4(uint8_t *pkt, uint8_t *sid, int direction) {
 		conn->active = 1;
 	}
 
-	tunnel.stats.compress_hash_total_l4++;
 	return rv;
 }
 

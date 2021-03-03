@@ -142,8 +142,10 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 	for ( i = 0; i < sizeof(s); i++, ptr++)
 		hash ^= *ptr;
 	hash += s.addr[0] + s.addr[4];
-	if (sid)
+	if (sid) {
 		*sid = hash;
+		tunnel.stats.compress_hash_total_l3++;
+	}
 
 	IpConnection *conn = (direction == S2C)? &connection_s2c[hash]: &connection_c2s[hash];
 	if (conn->active) {
@@ -164,7 +166,6 @@ int classify_l3(uint8_t *pkt, uint8_t *sid, int direction) {
 		conn->active = 1;
 	}
 
-	tunnel.stats.compress_hash_total_l3++;
 	return rv;
 }
 
