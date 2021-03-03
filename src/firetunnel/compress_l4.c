@@ -107,7 +107,7 @@ void compress_l4_init(void) {
 
 void print_compress_l4_table(int direction) {
 	L4Connection *conn = (direction == S2C)? &connection_s2c[0]: &connection_c2s[0];
-	printf("Compression L4 table:\n");
+	printf("Compression L4 tun tx table:\n");
 	printf("   cache collision %0.2f%%, total packets %u\n",
 		collision_ratio(tunnel.stats.compress_hash_total_l4, tunnel.stats.compress_hash_collision_l4),
 		tunnel.stats.compress_hash_total_l4);
