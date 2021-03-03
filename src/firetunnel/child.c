@@ -95,6 +95,10 @@ void child(int socket) {
 			if (tunnel.state == S_CONNECTED || !arg_server) {
 				dbg_printf("tunnel tx hello ");
 				pkt_send_hello(txudpframe, tunnel.udpfd);
+				if (arg_debug) {
+					printf(" ");
+					print_timestamp();
+				}
 				dbg_printf("\n");
 			}
 
@@ -301,12 +305,18 @@ void child(int socket) {
 						is_dns = 1;
 					}
 
-					if (!is_dns && (pkt_is_tcp(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes)))
+					if (!is_dns && (pkt_is_tcp(ethstart, nbytes) || pkt_is_udp(ethstart, nbytes))) {
+						dbg_printf("L4 ");
 						classify_l4(ethstart, NULL, direction);
-					else if (pkt_is_ip(ethstart, nbytes))
+					}
+					else if (pkt_is_ip(ethstart, nbytes)) {
+						dbg_printf("L3 ");
 						classify_l3(ethstart, NULL, direction);
-					else
+					}
+					else {
+						dbg_printf("L2 ");
 						classify_l2(ethstart, NULL, direction);
+					}
 
 					// write to tap device
 					dbg_printf("send tap ");
@@ -318,6 +328,8 @@ void child(int socket) {
 
 				else if (opcode == O_HELLO) {
 					dbg_printf("hello ");
+					if (arg_debug)
+						print_timestamp();
 					if (tunnel.state == S_DISCONNECTED) {
 						tunnel.seq = 0;
 						// update remote data
