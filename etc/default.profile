@@ -26,7 +26,7 @@ defaultgw 10.10.20.1
 # noseccomp
 
 # seccomp configuration for parent and child processes if seccomp enabled
-seccomp.child    lseek,ioctl,write,read,close,open,openat,writev,select,sendto,recvfrom,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
+seccomp.child    access,lseek,ioctl,write,read,close,open,openat,writev,select,sendto,recvfrom,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
 seccomp.parent sendto,write,read,close,open,openat,writev,ioctl,socket,connect,fstat,stat,getpid,mmap,munmap,mremap,sigreturn,rt_sigprocmask,exit_group,kill,wait4
 
 # DNS servers - not more than 3 are allowed

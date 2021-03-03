@@ -131,7 +131,7 @@ void child(int socket) {
 
 			if (++compresscnt >= COMPRESS_TIMEOUT_MAX) {
 				compresscnt = 0;
-				if (arg_debug || arg_debug_compress) {
+				if (arg_debug || arg_debug_compress || access("/debug-compress", F_OK) == 0) {
 					int direction = (arg_server)? S2C: C2S;
 					print_compress_l2_table(direction);
 					print_compress_l3_table(direction);
